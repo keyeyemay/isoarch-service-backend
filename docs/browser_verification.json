@@ -1,0 +1,16 @@
+{
+  "checks": [
+    "catalog filter",
+    "hide foreign delete",
+    "multipart upload",
+    "publish redirect",
+    "like",
+    "unlike",
+    "next feed navigation",
+    "own soft delete",
+    "deleted fields hidden",
+    "no browser JavaScript errors"
+  ],
+  "result": "passed",
+  "screenshots": "docs/screenshots"
+}

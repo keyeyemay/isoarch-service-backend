@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Изотопные сигнатуры — IsoArch Service</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=20260929-3">
+    <script src="{{ url_for('static', path='js/services.js') }}" defer></script>
 </head>
 <body>
 <div class="app-shell">
@@ -17,7 +18,7 @@
         </div>
 
         {# Фильтрация по углероду δ¹³C: числа, слайдер и красная кнопка #}
-        <form class="filter-box" method="get" action="{{ url_for('tiles') }}">
+        <form class="filter-box" method="get" action="{{ url_for('isotopic_signatures_list') }}">
             <div class="filter-box__header">
                 <span class="filter-box__label">Фильтр по углероду (δ¹³C):</span>
                 <div class="filter-number-wrap">
@@ -51,44 +52,44 @@
             </div>
 
             <div class="filter-box__actions">
-                <button type="submit" class="btn-filter">Применить</button>
+                <button type="submit" class="btn btn--primary btn--compact">Применить</button>
                 {% if is_filtered %}
-                <a href="{{ url_for('tiles') }}" class="btn-filter-reset">Сбросить</a>
+                <a href="{{ url_for('isotopic_signatures_list') }}" class="btn btn--secondary btn--compact">Сбросить</a>
                 {% endif %}
             </div>
         </form>
 
         <div class="grid">
-            {% for signature in signatures %}
+            {% for isotopic_signature in isotopic_signatures %}
             <div class="tile">
-                <a href="{{ url_for('feed_by_id', signature_id=signature.id) }}" class="tile__link">
+                <a href="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=isotopic_signature.id) }}" class="tile__link">
                     <div class="tile__image-wrap">
-                        <img src="{{ signature.image_url }}" alt="{{ signature.title }}" onerror="this.src='/static/images/default_signature.png'">
+                        <img src="{{ isotopic_signature.image_url }}" alt="{{ isotopic_signature.title }}" onerror="this.onerror=null; this.src='/static/images/default_signature.png'">
                     </div>
                     <div class="tile__body">
-                        <p class="tile__title">{{ signature.title }}</p>
+                        <p class="tile__title">{{ isotopic_signature.title }}</p>
                         <div class="tile__params">
-                            <span class="tile__param-badge tile__param-badge--c13">δ¹³C: {{ signature.delta_c13_display }}</span>
-                            <span class="tile__param-badge tile__param-badge--n15">δ¹⁵N: {{ signature.delta_n15_display }}</span>
+                            <span class="tile__param-badge tile__param-badge--c13">δ¹³C: {{ isotopic_signature.delta_c13_display }}</span>
+                            <span class="tile__param-badge tile__param-badge--n15">δ¹⁵N: {{ isotopic_signature.delta_n15_display }}</span>
                         </div>
                     </div>
                 </a>
                 <div class="tile__footer">
-                    <form method="post" action="{{ url_for('delete_signature', signature_id=signature.id) }}" class="tile__delete-form">
-                        <button type="submit" class="btn-tile-delete" title="Удалить сигнатуру" onclick="return confirm('Вы действительно хотите логически удалить сигнатуру «{{ signature.title }}»?');">
-                            <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>
-                        </button>
-                    </form>
+                    {% if isotopic_signature.is_creator %}
+                    <button type="button" class="btn btn--secondary btn--compact" data-delete="{{ isotopic_signature.id }}" title="Удалить сигнатуру">
+                        <span>Удалить</span>
+                    </button>
+                    {% endif %}
                     <div class="tile__likes">
                         <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 3 5 6.5 5 8.7 5 10.5 6.3 12 8c1.5-1.7 3.3-3 5.5-3 3.5 0 6 3.5 4 7.5C19 16.65 12 21 12 21z"/></svg>
-                        <span>{{ signature.likes_count }}</span>
+                        <span>{{ isotopic_signature.likes_count }}</span>
                     </div>
                 </div>
             </div>
             {% else %}
             <div class="empty-state">
                 <p>Ничего не найдено по заданному фильтру</p>
-                <a href="{{ url_for('tiles') }}" class="btn-filter-reset" style="display:inline-block; margin-top:8px;">Сбросить фильтр</a>
+                <a href="{{ url_for('isotopic_signatures_list') }}" class="btn btn--secondary btn--compact" style="display:inline-block; margin-top:8px;">Сбросить фильтр</a>
             </div>
             {% endfor %}
         </div>

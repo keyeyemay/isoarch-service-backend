@@ -1,14 +1,14 @@
 {# active_tab: "feed" | "add" | "tiles", feed_entry_id — passed in from the parent template's context #}
 <nav class="tabbar{% if on_video %} tabbar--on-video{% endif %}">
-    <a href="{{ url_for('feed_by_id', signature_id=feed_entry_id) }}" class="tab{% if active_tab == 'feed' %} tab--active{% endif %}">
+    <a href="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=feed_entry_id) if feed_entry_id else url_for('isotopic_signatures_list') }}" class="tab{% if active_tab == 'feed' %} tab--active{% endif %}">
         <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M9 9l6 3-6 3z"/></svg>
         <span>Лента</span>
     </a>
-    <a href="{{ url_for('draft') }}" class="tab{% if active_tab == 'add' %} tab--active{% endif %}">
+    <a href="{{ url_for('isotopic_signatures_draft') }}" class="tab{% if active_tab == 'add' %} tab--active{% endif %}">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         <span>Добавление</span>
     </a>
-    <a href="{{ url_for('tiles') }}" class="tab{% if active_tab == 'tiles' %} tab--active{% endif %}">
+    <a href="{{ url_for('isotopic_signatures_list') }}" class="tab{% if active_tab == 'tiles' %} tab--active{% endif %}">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
         <span>Плитка</span>
     </a>

@@ -3,26 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ signature.title }} — IsoArch</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+    <title>{{ isotopic_signature.title }} — IsoArch</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=20260929-3">
+    <script src="{{ url_for('static', path='js/services.js') }}" defer></script>
 </head>
 <body>
 <div class="app-shell">
     <main class="feed">
-        {# signature.video_url is built in the view/controller with fallback to default media #}
-        <video class="feed__video" src="{{ signature.video_url }}" poster="{{ signature.image_url }}"
-               onerror="this.src='/static/videos/default_signature.mp4'"
+        {# isotopic_signature.video_url is built in the view/controller with fallback to default media #}
+        <video id="feed-video" class="feed__video" src="{{ isotopic_signature.video_url }}" poster="{{ isotopic_signature.image_url }}"
+               onerror="this.onerror=null; this.src='/static/videos/default_signature.mp4'"
                autoplay muted loop playsinline></video>
+        <img hidden src="{{ isotopic_signature.image_url }}" alt=""
+             onerror="this.onerror=null; document.getElementById('feed-video').poster='/static/images/default_signature.png'">
         <div class="feed__gradient"></div>
 
         <div class="feed__overlay">
             <div class="feed__row">
                 <div class="feed__info">
-                    <h1 class="feed__title">{{ signature.title }}</h1>
+                    <h1 class="feed__title">{{ isotopic_signature.title }}</h1>
 
-                    <input type="checkbox" id="desc-toggle-{{ signature.id }}" class="desc-toggle__checkbox">
-                    <p class="feed__description">{{ signature.description }}</p>
-                    <label for="desc-toggle-{{ signature.id }}" class="desc-toggle__label">
+                    <input type="checkbox" id="desc-toggle-{{ isotopic_signature.id }}" class="desc-toggle__checkbox">
+                    <p class="feed__description">{{ isotopic_signature.description }}</p>
+                    <label for="desc-toggle-{{ isotopic_signature.id }}" class="desc-toggle__label">
                         <span class="label-more">Ещё</span>
                         <span class="label-less">Свернуть</span>
                     </label>
@@ -32,28 +35,27 @@
                     {# Параметры изотопов справа #}
                     <div class="feed__param-chip" title="Углерод δ¹³C">
                         <span class="feed__param-name">δ¹³C</span>
-                        <span class="feed__param-val">{{ signature.delta_c13_display }}</span>
+                        <span class="feed__param-val">{{ isotopic_signature.delta_c13_display }}</span>
                     </div>
                     <div class="feed__param-chip" title="Азот δ¹⁵N">
                         <span class="feed__param-name">δ¹⁵N</span>
-                        <span class="feed__param-val">{{ signature.delta_n15_display }}</span>
+                        <span class="feed__param-val">{{ isotopic_signature.delta_n15_display }}</span>
                     </div>
 
                     {# Иконка лайка #}
                     <div class="feed-icon-btn like-action">
-                        <div class="feed-icon-btn__circle like-action__btn">
+                        <button type="button" class="feed-icon-btn__circle like-action__btn" data-like="{{ isotopic_signature.id }}" data-liked="{{ isotopic_signature.is_liked }}" aria-label="Лайк" aria-pressed="{{ 'true' if isotopic_signature.is_liked else 'false' }}">
                             <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 3 5 6.5 5 8.7 5 10.5 6.3 12 8c1.5-1.7 3.3-3 5.5-3 3.5 0 6 3.5 4 7.5C19 16.65 12 21 12 21z"/></svg>
-                        </div>
-                        <span class="like-action__count">{{ signature.likes_count }}</span>
+                        </button>
+                        <span class="like-action__count" data-like-count>{{ isotopic_signature.likes_count }}</span>
                     </div>
 
                     {# Иконка перехода «Следующий» #}
-                    <a href="{{ url_for('feed_by_id', signature_id=signature.id) }}?next=true"
-                       class="feed-icon-btn feed-icon-btn--next"
-                       title="Следующая сигнатура">
-                        <div class="feed-icon-btn__circle feed-icon-btn__circle--accent">
-                            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-                        </div>
+                    <a href="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=isotopic_signature.id) }}?next=true"
+                       data-next="{{ isotopic_signature.id }}" data-feed-base="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=0) }}"
+                       class="btn btn--primary btn--compact" title="Следующая сигнатура">
+                        <span>Следующая</span>
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
                     </a>
                 </div>
             </div>

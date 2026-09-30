@@ -1,167 +1,233 @@
-# IsoArch — Реконструкция диеты по изотопному анализу
+# IsoArch · Изотопные сигнатуры
 
-Учебное приложение к ЛР1 (FastAPI + Jinja2). Тема — Вариант 18: изотопный
-анализ костных останков (δ¹⁵N, δ¹³C) для реконструкции диеты. Дизайн скопирован
-с [isoarch.org](https://isoarch.org).
+> **Лабораторная работа №3 · Вариант 18**<br>
+> Веб-сервис исследований костных останков: δ¹⁵N, δ¹³C, описание рациона, фото, короткое видео и лайки.
 
-## 1. Логика и архитектура проекта
+**Backend:** FastAPI · **ORM:** SQLAlchemy · **СУБД:** PostgreSQL 16 · **Медиа:** MinIO
 
-Приложение построено по паттерну **MVT** (Model–View–Template), без базы
-данных — все данные лежат в памяти процесса в виде одного списка (см. §2).
+## REST API
 
-```
-main.py                 # точка сборки: создаёт FastAPI app, монтирует /static, подключает роутер
-api/handlers.py          # контроллеры — 3 GET-маршрута, вся бизнес-логика (числовой фильтр δ¹³C, likes_count, URL медиа)
-data/collections.py       # модель-коллекция изотопных сигнатур + вспомогательные функции выборки
-templates/*.html          # Jinja2-шаблоны (View) — по одному на экран + переиспользуемые partials
-static/css/styles.css     # единый файл стилей для всех трёх шаблонов
-docker-compose.yml        # локальный MinIO (S3-хранилище) для картинок/видео
-```
+Базовый адрес: **`http://localhost:8000`** · JSON · Загрузка файлов: `multipart/form-data`
 
-Поток запроса: браузер → `main.py` (роутер) → обработчик в `api/handlers.py`
-читает/фильтрует данные из `data/collections.py`, достраивает вычисляемые поля
-(`image_url`, `video_url`, `likes_count`, отформатированные δ¹⁵N, δ¹³C, дата) → передаёт
-готовый контекст в `Jinja2Templates.TemplateResponse` → шаблон рендерит HTML.
+| Метод | Маршрут | Назначение |
+|:---:|---|---|
+| **GET** | `/api/services/` | Опубликованные услуги; фильтры `c13_max` и `filter`; признак `is_creator` |
+| **GET** | `/api/services/feed` | Первая опубликованная услуга в ленте |
+| **GET** | `/api/services/feed/{id}?next=true` | Следующая публикация; переход по кругу |
+| **GET** | `/api/services/draft` | Собственный черновик без передачи ID |
+| **POST** | `/api/services/` | Создание черновика: `title`, файлы `image` и `video` |
+| **PUT** | `/api/services/{id}/publish` | Публикация: `description`, `delta_n15`, `delta_c13` |
+| **DELETE** | `/api/services/{id}` | Логическое удаление собственной услуги |
+| **POST** | `/api/services/{id}/like` | Установка или отмена лайка: `{"like": 1}` / `{"like": 0}` |
+| **POST** | `/api/users/register` | Регистрация: `username`, `password`, `full_name`, `email` |
+| **POST** | `/api/users/login` | Заглушка аутентификации для ЛР4 |
+| **POST** | `/api/users/logout` | Заглушка деавторизации для ЛР4 |
 
-### 1.1 Модель данных (`data/collections.py`)
+## Таблицы PostgreSQL
 
-Одна коллекция `isotopic_signatures_db` — список словарей-сигнатур. Каждая сигнатура — плоский
-объект (1НФ, никаких вложенных доменных списков):
-
-| Поле | Тип | Смысл |
+| Таблица | Назначение | Поля |
 |---|---|---|
-| `id` | int | идентификатор |
-| `title`, `description` | str | название археологического образца и описание |
-| `status` | `"черновик" \| "опубликован" \| "удален"` | статус публикации |
-| `delta_n15` | float | изотопный состав δ¹⁵N (‰, азот) — нетекстовое поле №1 |
-| `delta_c13` | float | изотопный состав δ¹³C (‰, углерод) — нетекстовое поле №2 (по нему фильтрация) |
-| `analysis_date` | `date` | дата анализа / отбора образца |
-| `image_key`, `video_key` | str | ключи объектов в MinIO (без домена/бакета) |
-| `liked_by` | list[int] | ID пользователей, поставивших лайк — единственный допустимый список, служебный, не доменное поле темы |
+| **`users`** | Пользователи | `id`, `username`, `password`, `full_name`, `email`, `created_at` |
+| **`isotopic_signatures`** | Услуги — изотопные исследования | `id`, `title`, `description`, `status`, `image_file`, `video_file`, `delta_n15`, `delta_c13`, `creator_id`, `moderator_id`, `created_at`, `formed_at`, `completed_at` |
+| **`signature_likes`** | Связь пользователя с понравившейся услугой | `id`, `user_id`, `signature_id`, `created_at` |
 
-Бизнес-правила, которые соблюдает код:
-- ровно одна сигнатура в статусе «черновик» (`get_draft_signature()`) — она же на `/draft`;
-- сигнатуры «удален» никогда не попадают в выдачу (`get_published_signatures()` фильтрует и по статусу «опубликован», отсекая заодно черновик и удалённые);
-- `likes_count` не хранится, а считается на лету как `len(liked_by)` — соблюдение 1НФ (не дублируем производные данные).
+**Связи:** `creator_id`, `moderator_id`, `user_id` → `users.id`; `signature_id` → `isotopic_signatures.id`.<br>
+**Ограничения:** один черновик на пользователя; один лайк на пару пользователь–услуга; `ON DELETE RESTRICT`.
 
-### 1.2 Контроллеры (`api/handlers.py`)
+<details>
+<summary><strong>Типы полей, ключи и индексы</strong></summary>
 
-Вспомогательная функция `_with_display_fields(signature)` достраивает объект перед
-отдачей в шаблон:
-- `image_url` / `video_url` = `{MINIO_ENDPOINT}/{MEDIA_BUCKET}/{key}` (см. `build_media_url` в `data/collections.py`);
-- `likes_count` = `len(liked_by)`;
-- `delta_n15_display` — значение δ¹⁵N с промилле (`9.4 ‰`);
-- `delta_c13_display` — значение δ¹³C с промилле (`-18.2 ‰`);
-- `analysis_date_display` — дата в формате `дд.мм.гггг` для отображения;
-- `analysis_date_iso` — дата в ISO (`гггг-мм-дд`) для `<input type="date">` на черновике.
+Модели находятся в `models/`. FK используют `ON DELETE RESTRICT`; каскадного
+удаления нет. `alembic_version` — служебная таблица номера миграции.
 
-Три маршрута:
-
-| Маршрут | Файл-шаблон | Что делает |
+| Таблица | Поле | Тип / смысл |
 |---|---|---|
-| `GET /feed/{signature_id}` (`name="feed_by_id"`) | `feed.html` | Отдаёт опубликованную сигнатуру по ID. С `?next=true` — берёт следующую сигнатуру в списке опубликованных (по кругу). Если ID не найден среди опубликованных — откатывается на первую. |
-| `GET /draft` (`name="draft"`) | `add.html` | Отдаёт единственную сигнатуру-черновик: медиа (фото/видео) сверху, поля ввода, без лишних кнопок. |
-| `GET /list?c13_max=...` (`name="tiles"`) | `tiles.html` | Отдаёт опубликованные сигнатуры. Фильтрация числовым слайдером по порогу углерода δ¹³C (до ... ‰) с кнопкой. Параметры δ¹³C и δ¹⁵N отображаются в каждой карточке. |
+| users | id | Integer, PK |
+| users | username | String(100), обязательный, уникальный |
+| users | password | String(255), обязательный, хеш |
+| users | full_name | String(255), NULL допустим |
+| users | email | String(255), уникальный, NULL допустим |
+| users | created_at | DateTime, автоматически при создании |
+| isotopic_signatures | id | Integer, PK |
+| isotopic_signatures | title | String(255), обязательный |
+| isotopic_signatures | description | Text, описание |
+| isotopic_signatures | status | String(50), CHECK: draft/published/deleted |
+| isotopic_signatures | image_file / video_file | String(500), имена объектов MinIO |
+| isotopic_signatures | delta_n15 / delta_c13 | Float, δ¹⁵N / δ¹³C |
+| isotopic_signatures | creator_id | Integer, обязательный FK → users.id |
+| isotopic_signatures | moderator_id | Integer, необязательный FK → users.id |
+| isotopic_signatures | created_at | DateTime, дата создания |
+| isotopic_signatures | formed_at | DateTime, дата публикации, NULL до публикации |
+| isotopic_signatures | completed_at | DateTime, дата удаления, NULL до удаления |
+| signature_likes | id | Integer, PK |
+| signature_likes | user_id | Integer, обязательный FK → users.id |
+| signature_likes | signature_id | Integer, обязательный FK → isotopic_signatures.id |
+| signature_likes | created_at | DateTime, дата лайка |
+| alembic_version | version_num | String(32), PK, применённая миграция |
 
-Для нижнего таббара (`partials/_tabbar.html`) во все три контроллера дополнительно
-прокидывается `feed_entry_id` — id первой опубликованной сигнатуры, чтобы вкладка
-«Лента» всегда вела на реальную существующую сигнатуру без явного выбора ID
-пользователем.
+Индексы: `uq_user_single_draft` — уникальный creator_id только при status=draft;
+`uq_user_signature_like` — уникальная пара user_id/signature_id.
 
-### 1.3 Шаблоны (`templates/`)
 
-Jinja2, без JavaScript. Общие места:
-- `{{ url_for('static', path='css/styles.css') }}` — подключение единого CSS;
-- `{{ url_for('feed_by_id', signature_id=...) }}`, `{{ url_for('draft') }}`, `{{ url_for('tiles') }}` — все ссылки строятся по именам маршрутов, а не хардкодом строк;
-- `{% for %}...{% else %}...{% endfor %}` в `tiles.html` — рендерит блок-заглушку «Ничего не найдено», если после фильтра список пуст;
-- переключатель «Ещё/Свернуть» описания в `feed.html` — реализован чистым CSS через скрытый `<input type="checkbox">` + `:checked ~` селекторы, без единой строки JS. Описание ограничено строго 2 строками до раскрытия;
-- правый блок действий в `feed.html`: выведены плашки изотопов δ¹³C и δ¹⁵N, лайк и кнопка «Следующий» в виде круглой иконки.
+</details>
 
-### 1.4 Медиа и MinIO
+<details>
+<summary><strong>Форматы ответов, HTTP-статусы и загрузка медиа</strong></summary>
 
-Картинки/видео физически не лежат в репозитории — только их ключи в
-`data/collections.py`. Реальные файлы хранятся в MinIO (бакет задаётся через
-`MEDIA_BUCKET`, сейчас — `isoarchservice`). URL собирается контроллером на
-лету, поэтому смена хранилища/бакета — это просто смена переменных окружения,
-без правки кода шаблонов.
+| Операция | Успешный ответ |
+|---|---|
+| Список | `200` — массив публикаций |
+| Лента | `200` — одна публикация; без `next=true` маршрут по ID возвращает текущую запись |
+| Черновик | `200` — объект или `null`, если черновика нет |
+| Создание услуги | `201` — созданный черновик |
+| Публикация | `200` — опубликованная услуга |
+| Удаление | `204` — без тела ответа |
+| Лайк | `200` — `like`, `likes_count` |
+| Регистрация | `201` — пользователь без пароля; `full_name` и `email` необязательны |
+| Login / logout | `200` — сообщение заглушки |
 
-## 2. Как запустить проект
+Фильтры списка можно использовать совместно: `c13_max` задаёт верхний порог
+δ¹³C, `filter` ищет по названию. Лента упорядочена по возрастанию ID; после
+последней публикации возвращается первая. Пустая лента и скрытые ID дают 404.
 
-Предварительно один раз (уже сделано в этом репозитории — venv `.venv` создан
-и пакеты установлены):
+Ответ публикации содержит поля услуги, `is_creator` и `is_liked` (0/1),
+`likes_count`, `image_url`, `video_url`. Ответ черновика содержит ID, название,
+описание, изотопные значения и имена файлов. Системные поля доступны только
+для чтения в ответе публикации.
+
+Создание принимает PNG/JPEG/WebP до 10 МиБ и MP4 до 64 МиБ и 60 секунд.
+Проверяются MIME, сигнатура изображения, структура MP4 и длительность `mvhd`.
+Имена объектов — UUID с расширением из проверенного MIME, всегда на латинице.
+Оба файла проверяются перед загрузкой. При отказе MinIO черновик не сохраняется;
+при ошибке второй загрузки или записи БД уже загруженные объекты удаляются.
+Если MinIO недоступен и при уборке, ошибка уборки записывается в серверный лог.
+
+Ошибки: 403 — чужая услуга; 404 — отсутствующая/скрытая запись;
+409 — повторный черновик, недопустимый статус или занятый логин/email;
+413 — превышен размер; 422 — неверные поля/файлы; 503 — отказ MinIO.
+Пароли новых пользователей хранятся как scrypt-хеш, в ответах не возвращаются.
+Старые пользователи ЛР2 без пароля получают техническое значение `legacy-account`;
+оно не используется для входа, поскольку login пока является заглушкой.
+
+
+</details>
+
+---
+
+[Диаграмма классов](architecture_diagram.md) · [Коллекция Postman](postman_collection.json) · [Порядок сдачи](docs/lr3_submission.md) · [Соответствие ЛР3](docs/compliance.md)
+
+## Бизнес-правила
+
+`get_current_user()` в `api/dependencies.py` — общая singleton dependency:
+пользователь всегда определяется константой `CURRENT_USER_ID = 1`.
+FastAPI переиспользует результат в пределах запроса. Регистрация, login/logout
+не меняют текущего создателя: полноценная авторизация относится к ЛР4.
+
+У пользователя не более одного черновика. Разрешены только переходы
+`draft → published`, `draft → deleted`, `published → deleted`.
+Публикация и удаление доступны только создателю. Возврата в черновик нет.
+Удаление сохраняет строку и файлы: это soft delete. Удалённые и чужие
+черновики не выдаются в списке/ленте; даже страница ошибки не раскрывает их поля.
+
+`id`, `status`, `creator_id`, `moderator_id`, `created_at`, `formed_at`,
+`completed_at` нельзя передать для изменения. Дополнительные входные поля
+отклоняются с 422. Создание вычисляет `created_at` и создателя; публикация
+выставляет `formed_at`; удаление — `completed_at`. У черновика `formed_at=NULL`.
+Модератор остаётся NULL: в задании нет метода модерации. Даты — UTC.
+
+Лайки доступны только опубликованным услугам. Повторная установка/отмена
+идемпотентна; уникальная пара пользователь–услуга исключает дубли.
+
+## Страницы приложения
+
+| URL | Шаблон | Используемые сценарии |
+|---|---|---|
+| `/api/pages/isotopic_signatures/list` | `tiles.html` | Общая ORM-выборка списка; JS вызывает DELETE API только для своих услуг |
+| `/api/pages/isotopic_signatures/feed/{id}` | `feed.html` | Общая выборка ленты; JS вызывает GET следующей записи и POST like |
+| `/api/pages/isotopic_signatures/draft` | `add.html` | Общая выборка собственного черновика; POST с файлами, PUT публикации, DELETE черновика |
+| `/api/pages/isotopic_signatures/unavailable` | `deleted.html` | Нейтральная страница 404 без полей записи; общая выборка для навигации |
+
+Шаблоны первоначально формируются сервером; сценарии изменения данных используют
+те же JSON API, что и будущая SPA. Старых POST-обработчиков HTML больше нет.
+Служебные GET: `/api/docs`, `/api/docs/oauth2-redirect`, `/api/redoc`,
+`/api/openapi.json`; `/static/{path}` обслуживает CSS/JS и локальные запасные медиа.
+
+## Запуск
+
+Python 3.10+, Docker и Docker Compose:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install fastapi uvicorn jinja2 python-multipart aiofiles sqlalchemy alembic
-```
-
-Каждый раз для запуска нужны два процесса — MinIO (Docker) и сам сервер FastAPI.
-
-### 2.1 Поднять MinIO
-
-```bash
-cd ~/Developer/uni/isoarch-service-frontend
-docker-compose up -d
-```
-
-- S3 API: `http://localhost:9000`
-- Консоль администратора: `http://localhost:9001` (логин `root`, пароль `rootpassword`)
-
-Проверить, что поднялось:
-
-```bash
-docker-compose ps
-```
-
-### 2.2 Запустить приложение
-
-```bash
-source .venv/bin/activate   # если venv ещё не активирован
+pip install -r requirements.txt
+docker compose up -d --wait
 python main.py
 ```
 
-Или напрямую через uvicorn с автоперезагрузкой при правке кода:
+При запуске Alembic создаёт новую схему или обновляет старую схему ЛР2
+без удаления записей, затем настраивается MinIO и добавляются демонстрационные
+данные в пустую БД. В MinIO помещаются настоящие демонстрационные фото/видео.
+Если БД или MinIO недоступны, запуск завершается с ошибкой, а не имитирует успех.
+Перед обновлением собственной БД рекомендуется сохранить её резервную копию.
+Обратная миграция с удалением новых полей не предусмотрена.
+
+- Каталог: http://localhost:8000/api/pages/isotopic_signatures/list
+- Лента: http://localhost:8000/api/pages/isotopic_signatures/feed/1
+- Создание/публикация: http://localhost:8000/api/pages/isotopic_signatures/draft
+- Недоступная запись: http://localhost:8000/api/pages/isotopic_signatures/unavailable
+- Swagger: http://localhost:8000/api/docs
+- Adminer: http://localhost:8080 — PostgreSQL, сервер `postgres`,
+  БД `isoarch_db`, пользователь `isoarch_user`, пароль `isoarch_password`.
+- MinIO: API http://localhost:9000, консоль http://localhost:9001,
+  пользователь `root`, пароль `rootpassword`.
+
+Настройки через переменные окружения:
+
+| Переменная | По умолчанию |
+|---|---|
+| `DATABASE_URL` | `postgresql://isoarch_user:isoarch_password@localhost:5432/isoarch_db` |
+| `MINIO_ENDPOINT` | `http://localhost:9000` |
+| `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | `root` / `rootpassword` |
+| `MEDIA_BUCKET` | `isoarchservice` |
+
+Для тестов поддерживается `DATABASE_URL=sqlite:///...`: частичный уникальный
+индекс черновика есть и для SQLite. Основная БД лабораторной — PostgreSQL.
+Порт MinIO должен быть доступен браузеру, поскольку API возвращает URL медиа.
+
+## Проверки и сдача
 
 ```bash
-.venv/bin/uvicorn main:app --reload --host 0.0.0.0 --port 8000
+pip install -r requirements-dev.txt
+PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -v
 ```
 
-Приложение — на `http://127.0.0.1:8000`:
-- `http://127.0.0.1:8000/feed/1` — Лента
-- `http://127.0.0.1:8000/draft` — Добавление
-- `http://127.0.0.1:8000/list` — Плитка
+HTTP-тесты используют SQLite в памяти и имитируют MinIO; миграции проверяются
+на пустой БД и старой схеме с сохранением данных. Настоящие PostgreSQL/MinIO
+проверяются отдельно командой `python scripts/check_integration.py` с явными
+тестовыми настройками окружения и `LR3_INTEGRATION=1`. Эта проверка создаёт
+демонстрационную услугу и пользователя в выбранной тестовой БД.
 
-Если MinIO работает не на `localhost:9000` или бакет называется иначе,
-переопредели переменные окружения перед запуском:
+[Диаграмма](architecture_diagram.md), [Postman](postman_collection.json),
+[порядок сдачи](docs/lr3_submission.md), [SELECT](docs/lr3_select.sql),
+[контрольные вопросы](docs/control_questions.md), [этапы исправлений](AGENTS.md).
+Результат интеграционной проверки сохраняется в `docs/verification.json`.
+Postman-коллекция проверена Newman: 21 проверка без ошибок; краткий результат —
+`docs/postman_verification.json`. Браузерные результаты —
+`docs/browser_verification.json`, реальные снимки интерфейса — `docs/screenshots/`.
+Эти снимки не заменяют скриншоты Postman/SQL-клиента из порядка сдачи.
+
+При наличии Node.js и Playwright браузерную проверку можно повторить на
+отдельном тестовом сервере:
 
 ```bash
-MINIO_ENDPOINT=http://localhost:9000 MEDIA_BUCKET=isoarchservice python main.py
+npm install --prefix /tmp/isoarch-playwright playwright
+node /tmp/isoarch-playwright/node_modules/playwright/cli.js install chromium
+LR3_INTEGRATION=1 LR3_BASE_URL=http://127.0.0.1:58000 \
+LR3_PLAYWRIGHT_MODULE=/tmp/isoarch-playwright/node_modules/playwright \
+node scripts/browser_check.cjs
 ```
 
-## 3. Как остановить проект
+Для существующего Chromium можно указать `LR3_CHROME_PATH`. Среда должна
+содержать системные библиотеки, необходимые браузеру.
 
-**FastAPI-сервер:**
-- если запущен на переднем плане — `Ctrl+C` в том же терминале;
-- если запущен в фоне — освободить порт:
-  ```bash
-  lsof -ti:8000 -sTCP:LISTEN | xargs -r kill
-  ```
-
-**MinIO:**
-```bash
-docker-compose down          # остановить и удалить контейнер, данные (volume) сохраняются
-docker-compose down -v       # то же самое, но и полностью стереть данные в MinIO
-```
-
-## 4. Типичные проверки после запуска
-
-```bash
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/list    # ожидается 200
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/draft   # ожидается 200
-curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/feed/1  # ожидается 200
-```
-
-Если картинки/видео не отображаются в браузере — проверить, что бакет в MinIO
-публичный (Console → бакет → Manage → Access Policy → Public), и что имена
-файлов в бакете совпадают с `image_key`/`video_key` в `data/collections.py`.
+Остановка: `Ctrl+C`, затем `docker compose down`; данные в volumes сохраняются.

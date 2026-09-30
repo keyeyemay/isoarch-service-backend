@@ -1,0 +1,311 @@
+{
+  "info": {
+    "name": "IsoArch LR3 API",
+    "description": "10 демонстрационных запросов. Working directory: корень проекта. GET draft должен быть null перед началом.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "service_id",
+      "value": ""
+    },
+    {
+      "key": "feed_id",
+      "value": ""
+    },
+    {
+      "key": "registration_suffix",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Список с фильтром",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/services/?c13_max=-15"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Only published, filter and creator flag\", () => pm.response.json().forEach(s => { pm.expect(s.status).to.eql(\"published\"); pm.expect(s.delta_c13).to.be.at.most(-15); pm.expect([0,1]).to.include(s.is_creator); }));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "2. Создать с фото и видео",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{base_url}}/api/services/",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "Исследование ЛР3",
+              "type": "text"
+            },
+            {
+              "key": "image",
+              "type": "file",
+              "src": "static/images/default_signature.png"
+            },
+            {
+              "key": "video",
+              "type": "file",
+              "src": "static/videos/default_signature.mp4"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "const s = pm.response.json(); pm.collectionVariables.set(\"service_id\", s.id);",
+              "pm.test(\"Latin object names\", () => { pm.expect(s.image_file).to.match(/^[a-f0-9]{32}\\.png$/); pm.expect(s.video_file).to.match(/^[a-f0-9]{32}\\.mp4$/); });"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "3. Собственный черновик без ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/services/draft"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Created draft\", () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get(\"service_id\"))));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "4. Публикация",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/services/{{service_id}}/publish",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"description\": \"Изотопный анализ: смешанный рацион\", \"delta_n15\": 9.4, \"delta_c13\": -18.2}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Published by current user\", () => { const s=pm.response.json(); pm.expect(s.status).to.eql(\"published\"); pm.expect(s.is_creator).to.eql(1); pm.expect(s.formed_at).to.be.a(\"string\"); });"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "5. Лента без ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/services/feed"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set(\"feed_id\", pm.response.json().id);",
+              "pm.test(\"One published record\", () => pm.expect(pm.response.json().status).to.eql(\"published\"));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "6. Следующая публикация по ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/services/feed/{{feed_id}}?next=true"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Next published record\", () => { pm.expect(pm.response.json().status).to.eql(\"published\"); pm.expect(String(pm.response.json().id)).not.to.eql(String(pm.collectionVariables.get(\"feed_id\"))); });"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "7. Лайк от текущего пользователя",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/services/{{service_id}}/like",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"like\": 1}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Like set\", () => pm.expect(pm.response.json().like).to.eql(1));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "8. Soft delete созданной услуги",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{base_url}}/api/services/{{service_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Empty response\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "9. Регистрация",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/users/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"lr3_{{registration_suffix}}\", \"password\": \"StudyPassword123\", \"full_name\": \"Исследователь ЛР3\", \"email\": \"lr3_{{registration_suffix}}@example.org\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"registration_suffix\", String(Date.now()));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"No password in response\", () => pm.expect(pm.response.json()).not.to.have.property(\"password\"));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "10. Заглушки login и logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{base_url}}/api/users/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Authentication remains a stub\", () => pm.expect(pm.response.json().authenticated).to.eql(false));",
+              "pm.sendRequest({url: pm.variables.replaceIn(\"{{base_url}}/api/users/logout\"), method: \"POST\"}, (error, response) => { pm.test(\"Logout stub HTTP 200\", () => { pm.expect(error).to.eql(null); pm.expect(response.code).to.eql(200); }); console.log(\"Logout:\", response.json()); });"
+            ]
+          }
+        }
+      ],
+      "response": []
+    }
+  ]
+}

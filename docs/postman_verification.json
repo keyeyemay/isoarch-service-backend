@@ -1,0 +1,50 @@
+{
+  "stats": {
+    "iterations": {
+      "total": 1,
+      "pending": 0,
+      "failed": 0
+    },
+    "items": {
+      "total": 10,
+      "pending": 0,
+      "failed": 0
+    },
+    "scripts": {
+      "total": 11,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequests": {
+      "total": 10,
+      "pending": 0,
+      "failed": 0
+    },
+    "requests": {
+      "total": 11,
+      "pending": 0,
+      "failed": 0
+    },
+    "tests": {
+      "total": 10,
+      "pending": 0,
+      "failed": 0
+    },
+    "assertions": {
+      "total": 21,
+      "pending": 0,
+      "failed": 0
+    },
+    "testScripts": {
+      "total": 10,
+      "pending": 0,
+      "failed": 0
+    },
+    "prerequestScripts": {
+      "total": 1,
+      "pending": 0,
+      "failed": 0
+    }
+  },
+  "failures": []
+}

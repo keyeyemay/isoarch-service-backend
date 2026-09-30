@@ -1,0 +1,325 @@
+{
+  "checked_at": "2026-09-30T09:53:18.133255+00:00",
+  "database": "PostgreSQL",
+  "media": "real MinIO",
+  "checks": [
+    {
+      "check": "Published filtered list",
+      "method": "GET",
+      "path": "/api/services/?c13_max=-15",
+      "status": 200
+    },
+    {
+      "check": "Current draft absent",
+      "method": "GET",
+      "path": "/api/services/draft",
+      "status": 200
+    },
+    {
+      "check": "Upload actual PNG and MP4",
+      "method": "POST",
+      "path": "/api/services/",
+      "status": 201
+    },
+    {
+      "check": "Own draft without ID",
+      "method": "GET",
+      "path": "/api/services/draft",
+      "status": 200
+    },
+    {
+      "check": "Publish draft",
+      "method": "PUT",
+      "path": "/api/services/7/publish",
+      "status": 200
+    },
+    {
+      "check": "Actual MinIO image_url",
+      "status": 200,
+      "bytes": 5152
+    },
+    {
+      "check": "Actual MinIO video_url",
+      "status": 200,
+      "bytes": 22348
+    },
+    {
+      "check": "Feed without ID",
+      "method": "GET",
+      "path": "/api/services/feed",
+      "status": 200
+    },
+    {
+      "check": "Next published ID",
+      "method": "GET",
+      "path": "/api/services/feed/1?next=true",
+      "status": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/api/services/7/like",
+      "status": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/api/services/7/like",
+      "status": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/api/services/7/like",
+      "status": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/api/services/7/like",
+      "status": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/api/services/7/like",
+      "status": 200
+    },
+    {
+      "check": "Reject foreign deletion",
+      "method": "DELETE",
+      "path": "/api/services/3",
+      "status": 403
+    },
+    {
+      "check": "Reject deleted like",
+      "method": "POST",
+      "path": "/api/services/6/like",
+      "status": 404
+    },
+    {
+      "check": "Reject system fields",
+      "method": "PUT",
+      "path": "/api/services/7/publish",
+      "status": 422
+    },
+    {
+      "check": "Soft delete own service",
+      "method": "DELETE",
+      "path": "/api/services/7",
+      "status": 204
+    },
+    {
+      "check": "Hidden deleted service",
+      "method": "GET",
+      "path": "/api/services/feed/7",
+      "status": 404
+    },
+    {
+      "check": "Register user",
+      "method": "POST",
+      "path": "/api/users/register",
+      "status": 201
+    },
+    {
+      "check": "Duplicate email conflict",
+      "method": "POST",
+      "path": "/api/users/register",
+      "status": 409
+    },
+    {
+      "check": "Login stub",
+      "method": "POST",
+      "path": "/api/users/login",
+      "status": 200
+    },
+    {
+      "check": "Logout stub",
+      "method": "POST",
+      "path": "/api/users/logout",
+      "status": 200
+    },
+    {
+      "check": "HTML list",
+      "method": "GET",
+      "path": "/api/pages/isotopic_signatures/list",
+      "status": 200
+    },
+    {
+      "check": "HTML feed/1",
+      "method": "GET",
+      "path": "/api/pages/isotopic_signatures/feed/1",
+      "status": 200
+    },
+    {
+      "check": "HTML draft",
+      "method": "GET",
+      "path": "/api/pages/isotopic_signatures/draft",
+      "status": 200
+    },
+    {
+      "check": "HTML unavailable",
+      "method": "GET",
+      "path": "/api/pages/isotopic_signatures/unavailable",
+      "status": 404
+    },
+    {
+      "check": "HTML never exposes deleted data",
+      "method": "GET",
+      "path": "/api/pages/isotopic_signatures/feed/7",
+      "status": 404
+    },
+    {
+      "check": "PostgreSQL legacy migration preserves records and likes",
+      "status": "passed"
+    }
+  ],
+  "snapshots": {
+    "isotopic_signatures": [
+      {
+        "id": 1,
+        "title": "Погребение №14 (Бронза)",
+        "status": "published",
+        "creator_id": 1,
+        "image_file": "default_signature.png",
+        "video_file": "default_signature.mp4",
+        "formed_at": "2024-03-12 14:30:00",
+        "completed_at": "None"
+      },
+      {
+        "id": 2,
+        "title": "Погребение №7 (Железный век)",
+        "status": "published",
+        "creator_id": 1,
+        "image_file": "default_signature.png",
+        "video_file": "default_signature.mp4",
+        "formed_at": "2024-05-02 11:45:00",
+        "completed_at": "None"
+      },
+      {
+        "id": 3,
+        "title": "Курган №2 (Скифы)",
+        "status": "published",
+        "creator_id": 2,
+        "image_file": "default_signature.png",
+        "video_file": "default_signature.mp4",
+        "formed_at": "2023-11-20 16:20:00",
+        "completed_at": "None"
+      },
+      {
+        "id": 4,
+        "title": "Погребение №21 (Неолит)",
+        "status": "published",
+        "creator_id": 1,
+        "image_file": "default_signature.png",
+        "video_file": "default_signature.mp4",
+        "formed_at": "2024-01-09 10:15:00",
+        "completed_at": "None"
+      },
+      {
+        "id": 5,
+        "title": "Погребение №3 (Средневековье)",
+        "status": "draft",
+        "creator_id": 2,
+        "image_file": "default_signature.png",
+        "video_file": "default_signature.mp4",
+        "formed_at": "None",
+        "completed_at": "None"
+      },
+      {
+        "id": 6,
+        "title": "Погребение №9 (Античность)",
+        "status": "deleted",
+        "creator_id": 1,
+        "image_file": "default_signature.png",
+        "video_file": "default_signature.mp4",
+        "formed_at": "2023-08-01 13:00:00",
+        "completed_at": "None"
+      },
+      {
+        "id": 7,
+        "title": "LR3 integration",
+        "status": "deleted",
+        "creator_id": 1,
+        "image_file": "5564f170ca3c45338f38eecd9794837a.png",
+        "video_file": "1eb9f36882534439afb6bd13fec3185a.mp4",
+        "formed_at": "2026-09-30 09:53:17.774899",
+        "completed_at": "2026-09-30 09:53:17.863250"
+      }
+    ],
+    "users": [
+      {
+        "id": 1,
+        "username": "archaeologist_main",
+        "email": "ivanov@isoarch.org"
+      },
+      {
+        "id": 2,
+        "username": "researcher_petrov",
+        "email": "petrov@archaeo.ru"
+      },
+      {
+        "id": 3,
+        "username": "student_sidorov",
+        "email": "sidorov@uni.edu"
+      },
+      {
+        "id": 4,
+        "username": "check_7553bb208ee9",
+        "email": "7553bb208ee9@example.org"
+      }
+    ],
+    "signature_likes": [
+      {
+        "id": 1,
+        "user_id": 1,
+        "signature_id": 1
+      },
+      {
+        "id": 2,
+        "user_id": 2,
+        "signature_id": 1
+      },
+      {
+        "id": 3,
+        "user_id": 3,
+        "signature_id": 1
+      },
+      {
+        "id": 4,
+        "user_id": 1,
+        "signature_id": 2
+      },
+      {
+        "id": 5,
+        "user_id": 3,
+        "signature_id": 2
+      },
+      {
+        "id": 6,
+        "user_id": 2,
+        "signature_id": 3
+      },
+      {
+        "id": 7,
+        "user_id": 1,
+        "signature_id": 4
+      },
+      {
+        "id": 8,
+        "user_id": 2,
+        "signature_id": 4
+      },
+      {
+        "id": 9,
+        "user_id": 3,
+        "signature_id": 4
+      },
+      {
+        "id": 11,
+        "user_id": 1,
+        "signature_id": 7
+      }
+    ]
+  }
+}
