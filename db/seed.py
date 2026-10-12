@@ -1,8 +1,9 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from db.database import Base, SessionLocal, engine
-from db.models import IsotopicSignature, SignatureLike, User
+from db.base import Base
+from db.session import SessionLocal, engine
+from models import IsotopicSignature, SignatureLike, User
 
 
 def seed_database(db: Session | None = None):

@@ -3,138 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% if has_draft %}Публикация черновика{% else %}Новая сигнатура{% endif %} — IsoArch Service</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+    <title>{% if has_draft %}Публикация черновика{% else %}Новая сигнатура{% endif %} — IsoArch</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=20260930-restore">
+    <script src="{{ url_for('static', path='js/media-preview.js') }}" defer></script>
 </head>
 <body>
 <div class="app-shell">
     {% include "partials/_topnav.html" %}
-
     <main class="page-main">
         <div class="page-header">
-            <h1 class="page-title">{% if has_draft %}Публикация черновика{% else %}Новая сигнатура{% endif %}</h1>
+            <h1 class="page-title">{% if has_draft %}Публикация: {{ draft.title }}{% else %}Новая сигнатура{% endif %}</h1>
             <div class="page-title__bar"></div>
         </div>
-
-        {% if not has_draft %}
-        {# ================================================================= #}
-        {# СЦЕНАРИЙ 1: Черновика нет -> Создание черновика (кнопка «Далее») #}
-        {# ================================================================= #}
-        <form method="post" action="{{ url_for('create_draft') }}" class="form-stack">
-            {# Сверху медиа: превью фото и видео по умолчанию #}
+        <form method="post" action="{{ url_for('isotopic_signatures_publish' if has_draft else 'isotopic_signatures_create') }}" class="form-stack">
             <div class="media-upload">
                 <div class="upload-card">
                     <div class="upload-card__preview">
-                        <img src="{{ default_image_url }}" alt="Фото образца по умолчанию">
+                        <img id="photo-preview" src="{{ draft.image_url if has_draft else default_image_url }}" alt="Фото образца" onerror="this.onerror=null; this.src='/static/images/default_signature.png'">
                     </div>
                     <span class="upload-card__label">Фото образца</span>
+                    {% if not has_draft %}
+                    <label class="field__label" for="photo_file">Выбрать фото</label>
+                    <input class="field__input" id="photo_file" type="file" accept="image/*" data-preview="photo-preview">
+                    {% endif %}
                 </div>
                 <div class="upload-card">
                     <div class="upload-card__preview">
-                        <video src="{{ default_video_url }}" muted loop autoplay playsinline></video>
+                        <video id="video-preview" src="{{ draft.video_url if has_draft else default_video_url }}" onerror="this.onerror=null; this.src='/static/videos/default_signature.mp4'" muted loop autoplay playsinline></video>
                     </div>
                     <span class="upload-card__label">Видео анализа</span>
+                    {% if not has_draft %}
+                    <label class="field__label" for="video_file">Выбрать видео</label>
+                    <input class="field__input" id="video_file" type="file" accept="video/*" data-preview="video-preview">
+                    {% endif %}
                 </div>
             </div>
-
             <div class="form-card">
+                {% if not has_draft %}
                 <div class="field">
                     <label class="field__label" for="title">Название сигнатуры *</label>
-                    <input class="field__input" id="title" name="title" type="text"
-                           required placeholder="Например: Погребение №15 (Бронза)">
+                    <input class="field__input" id="title" name="title" type="text" required maxlength="255" placeholder="Например: Погребение №15 (Бронза)">
                 </div>
-
-                <div class="field">
-                    <label class="field__label" for="photo_file">Файл изображения (фото)</label>
-                    <input class="field__input" id="photo_file" name="photo_file" type="file" accept="image/*">
-                </div>
-
-                <div class="field">
-                    <label class="field__label" for="video_file">Файл видео (анализ)</label>
-                    <input class="field__input" id="video_file" name="video_file" type="file" accept="video/*">
-                </div>
-            </div>
-
-            <div class="action-area">
-                <button type="submit" class="btn btn--primary">Далее</button>
-            </div>
-        </form>
-
-        {% else %}
-        {# ================================================================= #}
-        {# СЦЕНАРИЙ 2: Черновик есть -> Заполнение полей и «Опубликовать»    #}
-        {# ================================================================= #}
-        <form method="post" action="{{ url_for('publish_draft') }}" class="form-stack">
-            {# Сверху медиа: фото и видео из черновика #}
-            <div class="media-upload">
-                <div class="upload-card">
-                    <div class="upload-card__preview">
-                        <img src="{{ draft.image_url }}" alt="Фото образца" onerror="this.src='/static/images/default_signature.png'">
-                    </div>
-                    <span class="upload-card__label">Фото образца</span>
-                </div>
-                <div class="upload-card">
-                    <div class="upload-card__preview">
-                        <video src="{{ draft.video_url }}" onerror="this.src='/static/videos/default_signature.mp4'" muted loop autoplay playsinline></video>
-                    </div>
-                    <span class="upload-card__label">Видео анализа</span>
-                </div>
-            </div>
-
-            {# Поля ввода данных #}
-            <div class="form-card">
-                <div class="field">
-                    <label class="field__label" for="title_display">Название сигнатуры</label>
-                    <input class="field__input" id="title_display" type="text"
-                           value="{{ draft.title }}" readonly style="background: #F9FAFB; cursor: default;">
-                </div>
+                {% else %}
                 <div class="field">
                     <label class="field__label" for="description">Краткое описание исследования *</label>
-                    <textarea class="field__textarea" id="description" name="description" rows="3" required
-                              placeholder="Описание костного образца и контекста находки...">{{ draft.description }}</textarea>
+                    <textarea class="field__textarea" id="description" name="description" rows="3" required>{{ draft.description }}</textarea>
                 </div>
+                <div class="field">
+                    <label class="field__label" for="delta_n15">δ¹⁵N (‰) — азот *</label>
+                    <input class="field__input" id="delta_n15" name="delta_n15" type="number" step="0.1" required value="{{ draft.delta_n15 if draft.delta_n15 is not none else '' }}">
+                </div>
+                <div class="field">
+                    <label class="field__label" for="delta_c13">δ¹³C (‰) — углерод *</label>
+                    <input class="field__input" id="delta_c13" name="delta_c13" type="number" step="0.1" required value="{{ draft.delta_c13 if draft.delta_c13 is not none else '' }}">
+                </div>
+                {% endif %}
             </div>
-
-            <div class="form-card">
-                <div class="icon-field">
-                    <div class="icon-field__icon">
-                        <svg viewBox="0 0 24 24"><text x="3" y="17" font-size="11" font-family="monospace" fill="currentColor">N</text><path d="M17 5v14"/></svg>
-                    </div>
-                    <div class="icon-field__body">
-                        <span class="icon-field__label">δ¹⁵N (‰) — азот *</span>
-                        <input class="icon-field__input" id="delta_n15" name="delta_n15" type="number" step="0.1"
-                               value="{{ draft.delta_n15 }}" required placeholder="0.0">
-                    </div>
-                </div>
-                <div class="icon-field">
-                    <div class="icon-field__icon">
-                        <svg viewBox="0 0 24 24"><text x="2" y="17" font-size="11" font-family="monospace" fill="currentColor">C</text><path d="M17 5v14"/></svg>
-                    </div>
-                    <div class="icon-field__body">
-                        <span class="icon-field__label">δ¹³C (‰) — углерод *</span>
-                        <input class="icon-field__input" id="delta_c13" name="delta_c13" type="number" step="0.1"
-                               value="{{ draft.delta_c13 }}" required placeholder="0.0">
-                    </div>
-                </div>
-                <div class="icon-field">
-                    <div class="icon-field__icon">
-                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                    </div>
-                    <div class="icon-field__body">
-                        <span class="icon-field__label">Дата анализа</span>
-                        <input class="icon-field__input" id="analysis_date" name="analysis_date" type="date"
-                               value="{{ draft.analysis_date_iso }}">
-                    </div>
-                </div>
-            </div>
-
             <div class="action-area">
-                <button type="submit" class="btn btn--primary">Опубликовать</button>
+                <button type="submit" class="btn btn--primary">{% if has_draft %}Опубликовать{% else %}Далее{% endif %}</button>
             </div>
         </form>
-        {% endif %}
     </main>
-
     {% set active_tab = "add" %}
     {% include "partials/_tabbar.html" %}
 </div>

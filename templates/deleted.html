@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Сигнатура удалена — IsoArch Service</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=20260930-restore">
 </head>
 <body>
 <div class="app-shell">
@@ -19,12 +19,12 @@
                 </svg>
             </div>
             <h2 style="font-size: 18px; font-weight: 700; color: var(--color-text-primary); margin-bottom: 8px;">
-                Изотопная сигнатура #{{ signature_id }} недоступна
+                Изотопная сигнатура #{{ isotopic_signature_id }} недоступна
             </h2>
             <p style="color: var(--color-text-secondary); max-width: 280px; margin: 0 auto 20px; font-size: 14px; line-height: 1.4;">
                 Образец «{{ title }}» был логически удален из базы данных и снят с публикации. Просмотр удаленных сигнатур запрещен.
             </p>
-            <a href="{{ url_for('tiles') }}" class="btn-filter" style="display: inline-block; text-decoration: none; padding: 10px 24px;">
+            <a href="{{ url_for('isotopic_signatures_list') }}" class="btn btn--primary btn--compact" style="display: inline-block; text-decoration: none; padding: 10px 24px;">
                 Вернуться в каталог
             </a>
         </div>
