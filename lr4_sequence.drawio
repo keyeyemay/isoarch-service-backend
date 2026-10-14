@@ -1,0 +1,395 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" agent="IsoArch diagram generator" version="24.7.17" type="device">
+  <diagram id="sequence" name="01 · Бизнес-процесс — Sequence">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1430" math="0" shadow="0" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="От входа до публикации и лайка" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=32;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="30" y="16" width="1040" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="client-head" value="Фронтенд&#10;(SPA)" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=26;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="85" width="200" height="70" as="geometry" />
+        </mxCell>
+        <object id="auth-head" label="Домен&#10;пользователей" domain="UserDomain" classifierRef="class-UserDomain">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=26;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="495" y="85" width="250" height="70" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="service-head" label="Домен&#10;услуг" domain="ServiceDomain" classifierRef="class-ServiceDomain">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=26;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="875" y="85" width="200" height="70" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="phase-0" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="175" width="1050" height="137" as="geometry" />
+        </mxCell>
+        <mxCell id="phase-1" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="320" width="1050" height="137" as="geometry" />
+        </mxCell>
+        <mxCell id="phase-2" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="465" width="1050" height="137" as="geometry" />
+        </mxCell>
+        <mxCell id="phase-3" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="610" width="1050" height="137" as="geometry" />
+        </mxCell>
+        <mxCell id="phase-4" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="755" width="1050" height="137" as="geometry" />
+        </mxCell>
+        <mxCell id="phase-5" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="900" width="1050" height="137" as="geometry" />
+        </mxCell>
+        <mxCell id="phase-6" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="1045" width="1050" height="137" as="geometry" />
+        </mxCell>
+        <mxCell id="phase-7" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="1190" width="1050" height="137" as="geometry" />
+        </mxCell>
+        <mxCell id="lifeline-client" value="" style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=none;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="125" y="155" as="sourcePoint" />
+            <mxPoint x="125" y="1335" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lifeline-auth" value="" style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=none;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="155" as="sourcePoint" />
+            <mxPoint x="620" y="1335" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lifeline-service" value="" style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=none;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="975" y="155" as="sourcePoint" />
+            <mxPoint x="975" y="1335" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="activation-0" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="614" y="239" width="12" height="62" as="geometry" />
+        </mxCell>
+        <object id="message-1" label="" signature="UserDomain.login_user(data: UserLogin): UserResponse" operationRef="op-login_user" arguments="{username, password}" messageSort="synchCall" http="POST /auth/login" senderRef="client-head" receiverRef="auth-head" operation="login_user">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;endSize=10;dashed=0;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="125" y="239" as="sourcePoint" />
+              <mxPoint x="614" y="239" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="http-0" value="1. POST /auth/login" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="179" width="465" height="29" as="geometry" />
+        </mxCell>
+        <object id="args-0" label="login_user({username, password})" signature="UserDomain.login_user(data: UserLogin): UserResponse" operationRef="op-login_user" arguments="{username, password}" messageSort="synchCall" http="POST /auth/login" operation="login_user">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry x="139" y="209" width="465" height="26" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="message-2" label="" signature="UserDomain.login_user(data: UserLogin): UserResponse" operationRef="op-login_user" arguments="200 (user_id=u)&#10;Set-Cookie(session_id=s)" messageSort="reply" http="POST /auth/login" senderRef="auth-head" receiverRef="client-head" operation="login_user">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=open;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="614" y="301" as="sourcePoint" />
+              <mxPoint x="125" y="301" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="reply-0" value="200 (user_id=u)&#10;Set-Cookie(session_id=s)" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="247" width="465" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="activation-1" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="969" y="384" width="12" height="62" as="geometry" />
+        </mxCell>
+        <object id="message-3" label="" signature="ServiceDomain.get_services(c13_max?: float, filter?: str): ServiceResponse[]" operationRef="op-get_services" arguments="c13_max=-15, filter=&quot;Бронза&quot;" messageSort="synchCall" http="GET /services" senderRef="client-head" receiverRef="service-head" operation="get_services">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;endSize=10;dashed=0;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="125" y="384" as="sourcePoint" />
+              <mxPoint x="969" y="384" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="http-1" value="2. GET /services" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="324" width="820" height="29" as="geometry" />
+        </mxCell>
+        <object id="args-1" label="get_services(c13_max=-15, filter=&quot;Бронза&quot;)" signature="ServiceDomain.get_services(c13_max?: float, filter?: str): ServiceResponse[]" operationRef="op-get_services" arguments="c13_max=-15, filter=&quot;Бронза&quot;" messageSort="synchCall" http="GET /services" operation="get_services">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry x="139" y="354" width="820" height="26" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="message-4" label="" signature="ServiceDomain.get_services(c13_max?: float, filter?: str): ServiceResponse[]" operationRef="op-get_services" arguments="200 (услуги: id, title, is_creator=0|1)" messageSort="reply" http="GET /services" senderRef="service-head" receiverRef="client-head" operation="get_services">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=open;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="969" y="446" as="sourcePoint" />
+              <mxPoint x="125" y="446" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="reply-1" value="200 (услуги: id, title, is_creator=0|1)" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="392" width="820" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="activation-2" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="969" y="529" width="12" height="62" as="geometry" />
+        </mxCell>
+        <object id="message-5" label="" signature="ServiceDomain.create_draft(title: str, image: binary, video: binary): ServiceDraftResponse" operationRef="op-create_draft" arguments="title, image=&lt;PNG&gt;, video=&lt;MP4&gt;" messageSort="synchCall" http="POST /services" senderRef="client-head" receiverRef="service-head" operation="create_draft">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;endSize=10;dashed=0;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="125" y="529" as="sourcePoint" />
+              <mxPoint x="969" y="529" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="http-2" value="3. POST /services · multipart/form-data" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="469" width="820" height="29" as="geometry" />
+        </mxCell>
+        <object id="args-2" label="create_draft(title, image=&lt;PNG&gt;, video=&lt;MP4&gt;)" signature="ServiceDomain.create_draft(title: str, image: binary, video: binary): ServiceDraftResponse" operationRef="op-create_draft" arguments="title, image=&lt;PNG&gt;, video=&lt;MP4&gt;" messageSort="synchCall" http="POST /services" operation="create_draft">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry x="139" y="499" width="820" height="26" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="message-6" label="" signature="ServiceDomain.create_draft(title: str, image: binary, video: binary): ServiceDraftResponse" operationRef="op-create_draft" arguments="201 (id=d, image_url, video_url)" messageSort="reply" http="POST /services" senderRef="service-head" receiverRef="client-head" operation="create_draft">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=open;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="969" y="591" as="sourcePoint" />
+              <mxPoint x="125" y="591" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="reply-2" value="201 (id=d, image_url, video_url)" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="537" width="820" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="activation-3" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="969" y="674" width="12" height="62" as="geometry" />
+        </mxCell>
+        <object id="message-7" label="" signature="ServiceDomain.get_draft(): ServiceDraftResponse | null" operationRef="op-get_draft" arguments="" messageSort="synchCall" http="GET /services/draft" senderRef="client-head" receiverRef="service-head" operation="get_draft">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;endSize=10;dashed=0;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="125" y="674" as="sourcePoint" />
+              <mxPoint x="969" y="674" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="http-3" value="4. GET /services/draft" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="614" width="820" height="29" as="geometry" />
+        </mxCell>
+        <object id="args-3" label="get_draft()" signature="ServiceDomain.get_draft(): ServiceDraftResponse | null" operationRef="op-get_draft" arguments="" messageSort="synchCall" http="GET /services/draft" operation="get_draft">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry x="139" y="644" width="820" height="26" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="message-8" label="" signature="ServiceDomain.get_draft(): ServiceDraftResponse | null" operationRef="op-get_draft" arguments="200 (id=d, title, description, delta_n15, delta_c13)" messageSort="reply" http="GET /services/draft" senderRef="service-head" receiverRef="client-head" operation="get_draft">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=open;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="969" y="736" as="sourcePoint" />
+              <mxPoint x="125" y="736" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="reply-3" value="200 (id=d, title, description, delta_n15, delta_c13)" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="682" width="820" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="activation-4" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="969" y="819" width="12" height="62" as="geometry" />
+        </mxCell>
+        <object id="message-9" label="" signature="ServiceDomain.publish_draft(id: int, pub_data: PublishRequest): ServiceResponse" operationRef="op-publish_draft" arguments="d, {description, delta_n15, delta_c13}" messageSort="synchCall" http="PUT /services/{id}" senderRef="client-head" receiverRef="service-head" operation="publish_draft">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;endSize=10;dashed=0;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="125" y="819" as="sourcePoint" />
+              <mxPoint x="969" y="819" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="http-4" value="5. PUT /services/{d}" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="759" width="820" height="29" as="geometry" />
+        </mxCell>
+        <object id="args-4" label="publish_draft(d, {description, delta_n15, delta_c13})" signature="ServiceDomain.publish_draft(id: int, pub_data: PublishRequest): ServiceResponse" operationRef="op-publish_draft" arguments="d, {description, delta_n15, delta_c13}" messageSort="synchCall" http="PUT /services/{id}" operation="publish_draft">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry x="139" y="789" width="820" height="26" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="message-10" label="" signature="ServiceDomain.publish_draft(id: int, pub_data: PublishRequest): ServiceResponse" operationRef="op-publish_draft" arguments="200 (id=d, status=published, обновлённые поля)" messageSort="reply" http="PUT /services/{id}" senderRef="service-head" receiverRef="client-head" operation="publish_draft">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=open;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="969" y="881" as="sourcePoint" />
+              <mxPoint x="125" y="881" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="reply-4" value="200 (id=d, status=published, обновлённые поля)" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="827" width="820" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="activation-5" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="969" y="964" width="12" height="62" as="geometry" />
+        </mxCell>
+        <object id="message-11" label="" signature="ServiceDomain.get_feed(): ServiceResponse" operationRef="op-get_feed" arguments="" messageSort="synchCall" http="GET /services/feed" senderRef="client-head" receiverRef="service-head" operation="get_feed">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;endSize=10;dashed=0;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="125" y="964" as="sourcePoint" />
+              <mxPoint x="969" y="964" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="http-5" value="6. GET /services/feed" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="904" width="820" height="29" as="geometry" />
+        </mxCell>
+        <object id="args-5" label="get_feed()" signature="ServiceDomain.get_feed(): ServiceResponse" operationRef="op-get_feed" arguments="" messageSort="synchCall" http="GET /services/feed" operation="get_feed">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry x="139" y="934" width="820" height="26" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="message-12" label="" signature="ServiceDomain.get_feed(): ServiceResponse" operationRef="op-get_feed" arguments="200 (id=f, title, video_url)" messageSort="reply" http="GET /services/feed" senderRef="service-head" receiverRef="client-head" operation="get_feed">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=open;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="969" y="1026" as="sourcePoint" />
+              <mxPoint x="125" y="1026" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="reply-5" value="200 (id=f, title, video_url)" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="972" width="820" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="activation-6" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="969" y="1109" width="12" height="62" as="geometry" />
+        </mxCell>
+        <object id="message-13" label="" signature="ServiceDomain.get_feed_by_id(id: int, next: bool = false): ServiceResponse" operationRef="op-get_feed_by_id" arguments="f, next=true" messageSort="synchCall" http="GET /services/feed/{id}?next=true" senderRef="client-head" receiverRef="service-head" operation="get_feed_by_id">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;endSize=10;dashed=0;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="125" y="1109" as="sourcePoint" />
+              <mxPoint x="969" y="1109" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="http-6" value="7. GET /services/feed/{f}?next=true" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="1049" width="820" height="29" as="geometry" />
+        </mxCell>
+        <object id="args-6" label="get_feed_by_id(f, next=true)" signature="ServiceDomain.get_feed_by_id(id: int, next: bool = false): ServiceResponse" operationRef="op-get_feed_by_id" arguments="f, next=true" messageSort="synchCall" http="GET /services/feed/{id}?next=true" operation="get_feed_by_id">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry x="139" y="1079" width="820" height="26" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="message-14" label="" signature="ServiceDomain.get_feed_by_id(id: int, next: bool = false): ServiceResponse" operationRef="op-get_feed_by_id" arguments="200 (id=n, title, video_url)" messageSort="reply" http="GET /services/feed/{id}?next=true" senderRef="service-head" receiverRef="client-head" operation="get_feed_by_id">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=open;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="969" y="1171" as="sourcePoint" />
+              <mxPoint x="125" y="1171" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="reply-6" value="200 (id=n, title, video_url)" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="1117" width="820" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="activation-7" value="" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="969" y="1254" width="12" height="62" as="geometry" />
+        </mxCell>
+        <object id="message-15" label="" signature="ServiceDomain.toggle_like(id: int, req: LikeRequest): LikeResponse" operationRef="op-toggle_like" arguments="n, {like:1}" messageSort="synchCall" http="POST /services/{id}/like" senderRef="client-head" receiverRef="service-head" operation="toggle_like">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=block;endFill=1;endSize=10;dashed=0;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="125" y="1254" as="sourcePoint" />
+              <mxPoint x="969" y="1254" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="http-7" value="8. POST /services/{n}/like" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=24;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="1194" width="820" height="29" as="geometry" />
+        </mxCell>
+        <object id="args-7" label="toggle_like(n, {like:1})" signature="ServiceDomain.toggle_like(id: int, req: LikeRequest): LikeResponse" operationRef="op-toggle_like" arguments="n, {like:1}" messageSort="synchCall" http="POST /services/{id}/like" operation="toggle_like">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+            <mxGeometry x="139" y="1224" width="820" height="26" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="message-16" label="" signature="ServiceDomain.toggle_like(id: int, req: LikeRequest): LikeResponse" operationRef="op-toggle_like" arguments="200 (like=1, likes_count=L)" messageSort="reply" http="POST /services/{id}/like" senderRef="service-head" receiverRef="client-head" operation="toggle_like">
+          <mxCell style="edgeStyle=none;html=0;strokeColor=#000000;strokeWidth=2;endArrow=open;endFill=0;endSize=10;dashed=1;dashPattern=5 5;" parent="1" edge="1">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="969" y="1316" as="sourcePoint" />
+              <mxPoint x="125" y="1316" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <mxCell id="reply-7" value="200 (like=1, likes_count=L)" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="139" y="1262" width="820" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="После входа: Cookie: session_id=s.  d — черновик; f — первая запись; n — следующая." style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=21;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="1355" width="1050" height="56" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="domains" name="02 · Домены и операции">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1030" math="0" shadow="0" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="domains-title" value="Домены и операции" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=none;strokeColor=none;fontColor=#000000;fontFamily=Arial;fontSize=32;fontStyle=1;align=left;verticalAlign=middle;spacing=8;spacing=0;fontColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="30" y="18" width="1040" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="class-UserDomain" value="Домен пользователей&#10;UserDomain" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=28;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="90" width="440" height="70" as="geometry" />
+        </mxCell>
+        <object id="op-login_user" label="1. login_user(data)&#10;POST /auth/login" signature="UserDomain.login_user(data: UserLogin): UserResponse" source="api/users_api.py" http="POST /auth/login" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="25" y="160" width="440" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-register_user" label="register_user(user_data)&#10;POST /auth/register" signature="UserDomain.register_user(user_data: UserRegister): UserResponse" source="api/users_api.py" http="POST /auth/register" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="25" y="248" width="440" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-logout_user" label="logout_user()&#10;POST /auth/logout" signature="UserDomain.logout_user(): HTTP 204" source="api/users_api.py" http="POST /auth/logout" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="25" y="336" width="440" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-current_user" label="current_user()&#10;GET /auth/me" signature="UserDomain.current_user(): UserResponse" source="api/users_api.py" http="GET /auth/me" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="25" y="424" width="440" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="class-ServiceDomain" value="Домен услуг&#10;ServiceDomain" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=28;fontStyle=1;align=center;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="495" y="90" width="580" height="70" as="geometry" />
+        </mxCell>
+        <object id="op-get_services" label="2. get_services(c13_max, filter)&#10;GET /services" signature="ServiceDomain.get_services(c13_max?: float, filter?: str): ServiceResponse[]" source="api/services_api.py" http="GET /services" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="495" y="160" width="580" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-get_feed" label="6. get_feed()&#10;GET /services/feed" signature="ServiceDomain.get_feed(): ServiceResponse" source="api/services_api.py" http="GET /services/feed" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="495" y="248" width="580" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-get_feed_by_id" label="7. get_feed_by_id(id, next)&#10;GET /services/feed/{id}" signature="ServiceDomain.get_feed_by_id(id: int, next: bool = false): ServiceResponse" source="api/services_api.py" http="GET /services/feed/{id}?next=true" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="495" y="336" width="580" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-get_draft" label="4. get_draft()&#10;GET /services/draft" signature="ServiceDomain.get_draft(): ServiceDraftResponse | null" source="api/services_api.py" http="GET /services/draft" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="495" y="424" width="580" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-create_draft" label="3. create_draft(title, image, video)&#10;POST /services" signature="ServiceDomain.create_draft(title: str, image: binary, video: binary): ServiceDraftResponse" source="api/services_api.py" http="POST /services" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="495" y="512" width="580" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-publish_draft" label="5. publish_draft(id, pub_data)&#10;PUT /services/{id}" signature="ServiceDomain.publish_draft(id: int, pub_data: PublishRequest): ServiceResponse" source="api/services_api.py" http="PUT /services/{id}" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="495" y="600" width="580" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-delete_service" label="delete_service(id)&#10;DELETE /services/{id}" signature="ServiceDomain.delete_service(id: int): HTTP 204" source="api/services_api.py" http="DELETE /services/{id}" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="495" y="688" width="580" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="op-toggle_like" label="8. toggle_like(id, req)&#10;POST /services/{id}/like" signature="ServiceDomain.toggle_like(id: int, req: LikeRequest): LikeResponse" source="api/services_api.py" http="POST /services/{id}/like" kind="operation">
+          <mxCell style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+            <mxGeometry x="495" y="776" width="580" height="88" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="mapping" value="Номера 1–8 совпадают&#10;с шагами последовательности.&#10;&#10;Сообщение → operationRef&#10;→ операция своего домена.&#10;&#10;Имя метода берётся из операции;&#10;входные данные — из arguments." style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="565" width="440" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Операции классов — источник сигнатур сообщений.&#10;Проверка и обновление связей: python3 scripts/sync_sequence_diagram.py" style="rounded=0;arcSize=10;html=0;whiteSpace=wrap;fillColor=#FFFFFF;strokeColor=#000000;fontColor=#000000;fontFamily=Arial;fontSize=22;fontStyle=0;align=left;verticalAlign=middle;spacing=8;" parent="1" vertex="1">
+          <mxGeometry x="25" y="910" width="1050" height="86" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
