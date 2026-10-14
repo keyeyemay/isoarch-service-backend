@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "IsoArch LR3 API",
-    "description": "10 демонстрационных запросов. Working directory: корень проекта. GET draft должен быть null перед началом.",
+    "description": "Ровно 10 методов из Lab_3_updated.md, каждый отдельным запросом. Лента принимает id и next как query-параметры; Tests дополнительно проверяет следующую запись, признак лайка и скрытие удалённой записи. Выполнять по порядку. Working directory: корень проекта. GET draft должен быть null перед началом.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -28,7 +28,7 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{base_url}}/api/services/?c13_max=-15"
+        "url": "{{base_url}}/api/services?c13_max=-15"
       },
       "event": [
         {
@@ -49,7 +49,7 @@
       "request": {
         "method": "POST",
         "header": [],
-        "url": "{{base_url}}/api/services/",
+        "url": "{{base_url}}/api/services",
         "body": {
           "mode": "formdata",
           "formdata": [
@@ -117,7 +117,7 @@
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/api/services/{{service_id}}/publish",
+        "url": "{{base_url}}/api/services/{{service_id}}",
         "body": {
           "mode": "raw",
           "raw": "{\"description\": \"Изотопный анализ: смешанный рацион\", \"delta_n15\": 9.4, \"delta_c13\": -18.2}",
@@ -143,7 +143,7 @@
       "response": []
     },
     {
-      "name": "5. Лента без ID",
+      "name": "5. Лента без ID и следующая запись",
       "request": {
         "method": "GET",
         "header": [],
@@ -157,7 +157,9 @@
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
               "pm.collectionVariables.set(\"feed_id\", pm.response.json().id);",
-              "pm.test(\"One published record\", () => pm.expect(pm.response.json().status).to.eql(\"published\"));"
+              "pm.test(\"One published record\", () => pm.expect(pm.response.json().status).to.eql(\"published\"));",
+              "pm.test(\"Binary liked flag\", () => pm.expect([0,1]).to.include(pm.response.json().is_liked));",
+              "pm.sendRequest({url: pm.variables.replaceIn(\"{{base_url}}/api/services/feed?id={{feed_id}}&next=true\"), method: \"GET\"}, (error, response) => { pm.test(\"Next feed record\", () => { pm.expect(error).to.eql(null); pm.expect(response.code).to.eql(200); const s=response.json(); pm.expect(s.status).to.eql(\"published\"); pm.expect([0,1]).to.include(s.is_liked); }); });"
             ]
           }
         }
@@ -165,28 +167,7 @@
       "response": []
     },
     {
-      "name": "6. Следующая публикация по ID",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{base_url}}/api/services/feed/{{feed_id}}?next=true"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Next published record\", () => { pm.expect(pm.response.json().status).to.eql(\"published\"); pm.expect(String(pm.response.json().id)).not.to.eql(String(pm.collectionVariables.get(\"feed_id\"))); });"
-            ]
-          }
-        }
-      ],
-      "response": []
-    },
-    {
-      "name": "7. Лайк от текущего пользователя",
+      "name": "6. Лайк от текущего пользователя",
       "request": {
         "method": "POST",
         "header": [
@@ -213,7 +194,8 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Like set\", () => pm.expect(pm.response.json().like).to.eql(1));"
+              "pm.test(\"Like set\", () => pm.expect(pm.response.json().like).to.eql(1));",
+              "pm.sendRequest({url: pm.variables.replaceIn(\"{{base_url}}/api/services/feed?id={{service_id}}\"), method: \"GET\"}, (error, response) => { pm.test(\"Feed reflects current user like\", () => { pm.expect(error).to.eql(null); pm.expect(response.code).to.eql(200); pm.expect(response.json().is_liked).to.eql(1); }); });"
             ]
           }
         }
@@ -221,7 +203,7 @@
       "response": []
     },
     {
-      "name": "8. Soft delete созданной услуги",
+      "name": "7. Soft delete созданной услуги",
       "request": {
         "method": "DELETE",
         "header": [],
@@ -234,7 +216,8 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));",
-              "pm.test(\"Empty response\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+              "pm.test(\"Empty response\", () => pm.expect(pm.response.text()).to.eql(\"\"));",
+              "pm.sendRequest({url: pm.variables.replaceIn(\"{{base_url}}/api/services/feed?id={{service_id}}\"), method: \"GET\"}, (error, response) => { pm.test(\"Deleted record is hidden\", () => { pm.expect(error).to.eql(null); pm.expect(response.code).to.eql(404); }); });"
             ]
           }
         }
@@ -242,7 +225,7 @@
       "response": []
     },
     {
-      "name": "9. Регистрация",
+      "name": "8. Регистрация",
       "request": {
         "method": "POST",
         "header": [
@@ -286,7 +269,7 @@
       "response": []
     },
     {
-      "name": "10. Заглушки login и logout",
+      "name": "9. Заглушка login",
       "request": {
         "method": "POST",
         "header": [],
@@ -299,8 +282,28 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Authentication remains a stub\", () => pm.expect(pm.response.json().authenticated).to.eql(false));",
-              "pm.sendRequest({url: pm.variables.replaceIn(\"{{base_url}}/api/users/logout\"), method: \"POST\"}, (error, response) => { pm.test(\"Logout stub HTTP 200\", () => { pm.expect(error).to.eql(null); pm.expect(response.code).to.eql(200); }); console.log(\"Logout:\", response.json()); });"
+              "pm.test(\"Authentication remains a stub\", () => pm.expect(pm.response.json().authenticated).to.eql(false));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "10. Заглушка logout",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{base_url}}/api/users/logout"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Logout stub\", () => pm.expect(pm.response.json().message).to.eql(\"Logout stub for LR4\"));"
             ]
           }
         }

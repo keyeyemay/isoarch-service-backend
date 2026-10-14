@@ -35,6 +35,8 @@ class IsotopicSignature(Base):
     formed_at = Column(
         DateTime, nullable=True
     )
+    deleted_at = Column(DateTime, nullable=True)
+
     completed_at = Column(
         DateTime, nullable=True
     )

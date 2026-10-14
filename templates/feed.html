@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ isotopic_signature.title }} — IsoArch</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=20260929-3">
-    <script src="{{ url_for('static', path='js/services.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=20261014-3">
+    <script src="{{ url_for('static', path='js/services.js') }}?v=20261014-2" defer></script>
 </head>
 <body>
 <div class="app-shell">
@@ -48,11 +48,12 @@
                             <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 3 5 6.5 5 8.7 5 10.5 6.3 12 8c1.5-1.7 3.3-3 5.5-3 3.5 0 6 3.5 4 7.5C19 16.65 12 21 12 21z"/></svg>
                         </button>
                         <span class="like-action__count" data-like-count>{{ isotopic_signature.likes_count }}</span>
+                        <span class="like-action__message" data-liked-message aria-live="polite">{{ 'Вы поставили лайк' if isotopic_signature.is_liked else '' }}</span>
                     </div>
 
                     {# Иконка перехода «Следующий» #}
                     <a href="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=isotopic_signature.id) }}?next=true"
-                       data-next="{{ isotopic_signature.id }}" data-feed-base="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=0) }}"
+                       data-next="{{ isotopic_signature.id }}" data-next-url="{{ url_for('get_feed') }}?id={{ isotopic_signature.id }}&amp;next=true" data-feed-base="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=0) }}"
                        class="btn btn--primary btn--compact" title="Следующая сигнатура">
                         <span>Следующая</span>
                         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>

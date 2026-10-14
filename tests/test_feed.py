@@ -1,4 +1,5 @@
 import unittest
+import json
 from pathlib import Path
 from unittest.mock import patch
 from fastapi.testclient import TestClient
@@ -45,25 +46,71 @@ class ApiTests(unittest.TestCase):
         self.engine.dispose()
 
     def create(self, data=None, image=IMAGE, video=VIDEO):
-        return self.client.post('/api/services/', data=data or {'title': 'New service'}, files={
+        return self.client.post('/api/services', data=data or {'title': 'New service'}, files={
             'image': ('фото.рус', image, 'image/png'), 'video': ('видео.рус', video, 'video/mp4')})
 
     def publish(self, id, **extra):
-        return self.client.put(f'/api/services/{id}/publish', json={
+        return self.client.put(f'/api/services/{id}', json={
             'description':'Research', 'delta_n15':9.4, 'delta_c13':-18.2, **extra})
 
     def test_filtered_list_and_creator(self):
-        data = self.client.get('/api/services/').json()
+        data = self.client.get('/api/services').json()
         self.assertEqual([(s['id'],s['is_creator']) for s in data], [(1,1),(2,0)])
-        self.assertEqual([s['id'] for s in self.client.get('/api/services/?c13_max=-15').json()], [1])
-        self.assertEqual(self.client.get('/api/services/?filter=TITLE_2').json()[0]['id'], 2)
-        self.assertEqual(self.client.get('/api/services/?c13_max=bad').status_code, 422)
+        self.assertEqual([s['id'] for s in self.client.get('/api/services?c13_max=-15').json()], [1])
+        self.assertEqual(self.client.get('/api/services?filter=TITLE_2').json()[0]['id'], 2)
+        self.assertEqual(self.client.get('/api/services?c13_max=bad').status_code, 422)
+
+    def test_exact_lab_contract_and_postman(self):
+        expected = {('GET', '/api/services'), ('POST', '/api/services'),
+                    ('GET', '/api/services/feed'), ('GET', '/api/services/draft'),
+                    ('PUT', '/api/services/{id}'), ('DELETE', '/api/services/{id}'),
+                    ('POST', '/api/services/{id}/like'), ('POST', '/api/users/register'),
+                    ('POST', '/api/users/login'), ('POST', '/api/users/logout')}
+        actual = {(method.upper(), path) for path, operations in app.openapi()['paths'].items()
+                  for method in operations}
+        self.assertEqual(actual, expected)
+        collection = json.loads(Path('postman_collection.json').read_text())
+        requests = collection['item']
+        self.assertEqual(len(requests), 10)
+        actual = set()
+        for item in requests:
+            request = item['request']
+            path = request['url'].replace('{{base_url}}', '').split('?')[0]
+            path = path.replace('{{service_id}}', '{id}')
+            actual.add((request['method'], path))
+        self.assertEqual(actual, expected)
+        self.assertEqual(self.client.get('/api/services', follow_redirects=False).status_code, 200)
+        self.assertEqual(self.client.put('/api/services/1/publish', json={}).status_code, 404)
+
+    def test_liked_flag_is_personal_and_visible(self):
+        with Session(self.engine) as db:
+            db.add(SignatureLike(user_id=2, signature_id=1))
+            db.commit()
+        data = self.client.get('/api/services/feed?id=1').json()
+        self.assertEqual((data['is_liked'], data['likes_count']), (0, 1))
+        page = self.client.get('/api/pages/isotopic_signatures/feed/1')
+        self.assertIn('data-liked-message aria-live="polite"></span>', page.text)
+        self.client.post('/api/services/1/like', json={'like': 1})
+        self.assertEqual(self.client.get('/api/services/feed?id=1').json()['is_liked'], 1)
+        self.assertIn('data-liked-message aria-live="polite">Вы поставили лайк</span>', self.client.get('/api/pages/isotopic_signatures/feed/1').text)
+
+    def test_deleted_timestamp_excluded_at_query_level(self):
+        from datetime import datetime
+        from repositories.isotopic_signatures import by_id, published_by_id
+        with Session(self.engine) as db:
+            db.get(IsotopicSignature, 1).deleted_at = datetime.utcnow()
+            db.commit()
+            self.assertIsNone(by_id(db, 1))
+            self.assertIsNone(published_by_id(db, 1))
+            self.assertIsNone(by_id(db, 4))
+        self.assertEqual(self.client.get('/api/services/feed?id=1').status_code, 404)
+        self.assertEqual([s['id'] for s in self.client.get('/api/services').json()], [2])
 
     def test_feed_navigation_and_wrap(self):
-        for url, id in [('/feed',1),('/feed/1',1),('/feed/1?next=true',2),('/feed/2?next=true',1)]:
+        for url, id in [('/feed',1),('/feed?id=1',1),('/feed?id=1&next=true',2),('/feed?id=2&next=true',1)]:
             self.assertEqual(self.client.get('/api/services'+url).json()['id'], id)
         for id in (3,4,999):
-            response = self.client.get(f'/api/services/feed/{id}?next=true')
+            response = self.client.get(f'/api/services/feed?id={id}&next=true')
             self.assertEqual(response.status_code, 404)
             self.assertNotIn('PRIVATE_TITLE',response.text)
 
@@ -90,13 +137,14 @@ class ApiTests(unittest.TestCase):
         for value, count in [(1,1),(1,1),(0,0),(0,0),(1,1)]:
             response=self.client.post(f'/api/services/{id}/like',json={'like':value})
             self.assertEqual(response.json(),{'like':value,'likes_count':count})
-        self.assertEqual(self.client.get(f'/api/services/feed/{id}').json()['is_liked'],1)
+        self.assertEqual(self.client.get(f'/api/services/feed?id={id}').json()['is_liked'],1)
         self.assertEqual(self.client.delete(f'/api/services/{id}').status_code,204)
-        self.assertEqual(self.client.get(f'/api/services/feed/{id}').status_code,404)
+        self.assertEqual(self.client.get(f'/api/services/feed?id={id}').status_code,404)
         self.assertEqual(self.publish(id).status_code,404)
         with Session(self.engine) as db:
             record=db.get(IsotopicSignature,id)
             self.assertEqual(record.status,'deleted');self.assertIsNotNone(record.completed_at)
+            self.assertEqual(record.deleted_at, record.completed_at)
             self.assertEqual(db.query(SignatureLike).filter_by(signature_id=id).count(),1)
 
     def test_ownership(self):
@@ -105,13 +153,14 @@ class ApiTests(unittest.TestCase):
         with Session(self.engine) as db:self.assertEqual(db.get(IsotopicSignature,2).status,'published')
 
     def test_system_fields_rejected(self):
-        for field,value in [('id',10),('status','published'),('creator_id',2),('moderator_id',2),('created_at','2000-01-01'),('formed_at','2000-01-01'),('completed_at','2000-01-01')]:
+        for field,value in [('id',10),('status','published'),('creator_id',2),('moderator_id',2),('created_at','2000-01-01'),('formed_at','2000-01-01'),('completed_at','2000-01-01'),('deleted_at','2000-01-01')]:
             with self.subTest(field=field):
                 self.assertEqual(self.create({'title':'Injected',field:str(value)}).status_code,422)
         id=self.create().json()['id']
         self.assertEqual(self.publish(id,status='deleted').status_code,422)
         self.assertEqual(self.publish(id,creator_id=2).status_code,422)
-        self.assertEqual(self.client.put(f'/api/services/{id}/publish', content='{"description":"x","delta_n15":Infinity,"delta_c13":-18}', headers={'Content-Type':'application/json'}).status_code,422)
+        self.assertEqual(self.publish(id,deleted_at='2000-01-01').status_code,422)
+        self.assertEqual(self.client.put(f'/api/services/{id}', content='{"description":"x","delta_n15":Infinity,"delta_c13":-18}', headers={'Content-Type':'application/json'}).status_code,422)
         with Session(self.engine) as db:self.assertEqual(db.get(IsotopicSignature,id).status,'draft')
 
     def test_like_only_published_and_strict_binary(self):
@@ -120,7 +169,7 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(self.client.post('/api/services/1/like',json={'like':value}).status_code,422)
 
     def test_files_required_and_validated_before_storage(self):
-        self.assertEqual(self.client.post('/api/services/',data={'title':'No files'}).status_code,422)
+        self.assertEqual(self.client.post('/api/services',data={'title':'No files'}).status_code,422)
         self.assertEqual(self.create(image=b'not an image').status_code,422)
         self.assertEqual(self.create(video=b'not a video').status_code,422)
         self.put.assert_not_called()
@@ -186,7 +235,7 @@ class ApiTests(unittest.TestCase):
         self.assertIn('name="image"',draft.text);self.assertIn('name="video"',draft.text)
         id=self.create().json()['id']
         draft=self.client.get('/api/pages/isotopic_signatures/draft')
-        self.assertIn(f'/api/services/{id}/publish',draft.text)
+        self.assertIn(f'/api/services/{id}',draft.text)
         feed=self.client.get('/api/pages/isotopic_signatures/feed/1')
         self.assertEqual(feed.status_code,200);self.assertIn('data-like="1"',feed.text)
         next_page=self.client.get('/api/pages/isotopic_signatures/feed/1?next=true')

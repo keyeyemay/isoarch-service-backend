@@ -16,8 +16,8 @@ def get_feed(db, signature_id=None, next=False):
     if signature_id is None:
         record = repository.first_published(db)
     else:
-        record = repository.by_id(db, signature_id)
-        if record is None or record.status != "published":
+        record = repository.published_by_id(db, signature_id)
+        if record is None:
             raise HTTPException(404, "Service not found")
         if next:
             record = repository.next_published(db, signature_id)
@@ -87,6 +87,7 @@ def delete_service(db, signature_id, user_id):
     record = owned_service(db, signature_id, user_id)
     record.status = "deleted"
     record.completed_at = datetime.utcnow()
+    record.deleted_at = record.completed_at
     db.commit()
 
 

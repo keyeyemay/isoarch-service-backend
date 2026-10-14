@@ -33,7 +33,7 @@ const assert = require('node:assert/strict');
     await page.fill('#title','Browser verification');
     await page.setInputFiles('#photo_file',path.resolve('static/images/default_signature.png'));
     await page.setInputFiles('#video_file',path.resolve('static/videos/default_signature.mp4'));
-    const created = page.waitForResponse(r => r.url() === base+'/api/services/' && r.request().method()==='POST');
+    const created = page.waitForResponse(r => r.url() === base+'/api/services' && r.request().method()==='POST');
     await Promise.all([page.waitForNavigation(),page.getByRole('button',{name:'Далее',exact:true}).click()]);
     const createdResponse = await created;
     assert.equal(createdResponse.status(),201);
@@ -45,12 +45,15 @@ const assert = require('node:assert/strict');
     await Promise.all([page.waitForURL(new RegExp('/feed/'+draft.id+'$')),page.getByRole('button',{name:'Опубликовать',exact:true}).click()]);
     await page.screenshot({path:'docs/screenshots/feed.png',fullPage:true});
     const like=page.getByRole('button',{name:'Лайк',exact:true});
+    assert.equal(await page.locator('[data-liked-message]').textContent(),'');
     await like.click();
     await page.waitForFunction(() => document.querySelector('[data-like]').getAttribute('aria-pressed') === 'true');
     assert.equal(await page.locator('[data-like-count]').textContent(),'1');
+    assert.equal(await page.locator('[data-liked-message]').textContent(),'Вы поставили лайк');
     await like.click();
     await page.waitForFunction(() => document.querySelector('[data-like]').getAttribute('aria-pressed') === 'false');
     assert.equal(await page.locator('[data-like-count]').textContent(),'0');
+    assert.equal(await page.locator('[data-liked-message]').textContent(),'');
     await Promise.all([page.waitForURL(/\/feed\/1$/),page.getByRole('link',{name:'Следующая'}).click()]);
 
     await page.goto(pages + '/list');
@@ -63,7 +66,7 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('body').textContent().then(s => s.includes('Browser verification')),false);
     await page.screenshot({path:'docs/screenshots/unavailable.png',fullPage:true});
     assert.deepEqual(errors,[]);
-    fs.writeFileSync('docs/browser_verification.json',JSON.stringify({checks:[
+    fs.writeFileSync('docs/browser_verification.json',JSON.stringify({checked_at:new Date().toISOString(),checks:[
       'catalog filter','hide foreign delete','multipart upload','publish redirect','like','unlike',
       'next feed navigation','own soft delete','deleted fields hidden','no browser JavaScript errors'],
       result:'passed',screenshots:'docs/screenshots'},null,2)+'\n');

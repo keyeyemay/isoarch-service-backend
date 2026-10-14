@@ -7,6 +7,25 @@ from models import User, IsotopicSignature
 
 
 class MigrationTests(unittest.TestCase):
+    def test_lr3_upgrade_backfills_deleted_timestamp_without_losing_data(self):
+        engine = create_engine('sqlite://')
+        upgrade_database(engine)
+        with Session(engine) as db:
+            seed_database(db)
+        # Recreate the previous LR3 column set and revision, retaining all rows.
+        with engine.begin() as conn:
+            conn.execute(text('ALTER TABLE isotopic_signatures DROP COLUMN deleted_at'))
+            conn.execute(text("UPDATE alembic_version SET version_num='0001_lr3'"))
+        upgrade_database(engine)
+        upgrade_database(engine)
+        with Session(engine) as db:
+            self.assertEqual(db.query(IsotopicSignature).count(), 6)
+            deleted = db.get(IsotopicSignature, 6)
+            self.assertEqual(deleted.deleted_at, deleted.completed_at)
+            self.assertIsNone(db.get(IsotopicSignature, 1).deleted_at)
+            self.assertEqual(len(db.get(IsotopicSignature, 1).likes), 3)
+        engine.dispose()
+
     def test_fresh_schema_and_repeat_upgrade(self):
         engine=create_engine('sqlite://')
         upgrade_database(engine);upgrade_database(engine)

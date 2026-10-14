@@ -6,7 +6,7 @@
     <title>{% if has_draft %}Публикация черновика{% else %}Новая сигнатура{% endif %} — IsoArch</title>
     <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=20260929-3">
     <script src="{{ url_for('static', path='js/media-preview.js') }}" defer></script>
-    <script src="{{ url_for('static', path='js/services.js') }}" defer></script>
+    <script src="{{ url_for('static', path='js/services.js') }}?v=20261014-2" defer></script>
 </head>
 <body>
 <div class="app-shell">
@@ -16,7 +16,7 @@
             <h1 class="page-title">{% if has_draft %}Публикация: {{ draft.title }}{% else %}Новая сигнатура{% endif %}</h1>
             <div class="page-title__bar"></div>
         </div>
-        <form method="post" action="{{ '/api/services/' ~ draft.id ~ '/publish' if has_draft else '/api/services/' }}" class="form-stack" enctype="multipart/form-data" data-service-form="{{ 'publish' if has_draft else 'create' }}" data-draft-page="{{ url_for('isotopic_signatures_draft') }}" data-feed-page="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=draft.id) if has_draft else '' }}">
+        <form method="post" action="{{ '/api/services/' ~ draft.id if has_draft else '/api/services' }}" class="form-stack" enctype="multipart/form-data" data-service-form="{{ 'publish' if has_draft else 'create' }}" data-draft-page="{{ url_for('isotopic_signatures_draft') }}" data-feed-page="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=draft.id) if has_draft else '' }}">
             <div class="media-upload">
                 <div class="upload-card">
                     <div class="upload-card__preview">

@@ -28,30 +28,30 @@ def main():
             assert response.status_code == expected,(name,response.status_code,response.text)
             results.append({'check':name,'method':method,'path':path,'status':response.status_code})
             return response
-        records=call('Published filtered list','GET','/api/services/?c13_max=-15').json()
+        records=call('Published filtered list','GET','/api/services?c13_max=-15').json()
         assert records and all(s['status']=='published' and s['delta_c13']<=-15 and s['is_creator'] in (0,1) for s in records)
         assert call('Current draft absent','GET','/api/services/draft').json() is None
-        draft=call('Upload actual PNG and MP4','POST','/api/services/',201,data={'title':'LR3 integration'},files={
+        draft=call('Upload actual PNG and MP4','POST','/api/services',201,data={'title':'LR3 integration'},files={
             'image':('фото.рус',image,'image/png'),'video':('видео.рус',video,'video/mp4')}).json()
         id=draft['id']
         assert call('Own draft without ID','GET','/api/services/draft').json()['id']==id
-        published=call('Publish draft','PUT',f'/api/services/{id}/publish',json={
+        published=call('Publish draft','PUT',f'/api/services/{id}',json={
             'description':'Integration verification','delta_n15':9.4,'delta_c13':-18.2}).json()
         assert published['status']=='published' and published['formed_at'] and published['is_creator']==1
         for field,data in [('image_url',image),('video_url',video)]:
             response=client.get(published[field]);assert response.status_code==200 and response.content==data
             results.append({'check':'Actual MinIO '+field,'status':200,'bytes':len(data)})
         first=call('Feed without ID','GET','/api/services/feed').json()
-        following=call('Next published ID','GET',f"/api/services/feed/{first['id']}?next=true").json()
+        following=call('Next published ID','GET',f"/api/services/feed?id={first['id']}&next=true").json()
         assert following['id']!=first['id']
         for value,count in [(1,1),(1,1),(0,0),(0,0),(1,1)]:
             response=call('Idempotent like/unlike','POST',f'/api/services/{id}/like',json={'like':value}).json()
             assert response=={'like':value,'likes_count':count}
         call('Reject foreign deletion','DELETE','/api/services/3',403)
         call('Reject deleted like','POST','/api/services/6/like',404,json={'like':1})
-        call('Reject system fields','PUT',f'/api/services/{id}/publish',422,json={'description':'x','delta_n15':1,'delta_c13':1,'creator_id':2})
+        call('Reject system fields','PUT',f'/api/services/{id}',422,json={'description':'x','delta_n15':1,'delta_c13':1,'creator_id':2})
         call('Soft delete own service','DELETE',f'/api/services/{id}',204)
-        call('Hidden deleted service','GET',f'/api/services/feed/{id}',404)
+        call('Hidden deleted service','GET',f'/api/services/feed?id={id}',404)
         suffix=uuid.uuid4().hex[:12]
         registration={'username':'check_'+suffix,'email':suffix+'@example.org','password':'StudyPassword123'}
         user=call('Register user','POST','/api/users/register',201,json=registration).json()
@@ -66,11 +66,11 @@ def main():
         assert 'LR3 integration' not in hidden.text
     with Session(engine) as db:
         record=db.get(IsotopicSignature,id)
-        assert record.status=='deleted' and record.completed_at and record.image_file==draft['image_file']
+        assert record.status=='deleted' and record.deleted_at==record.completed_at and record.completed_at and record.image_file==draft['image_file']
         assert db.query(SignatureLike).filter_by(signature_id=id,user_id=1).count()==1
         assert db.get(User,user['id']).password.startswith('scrypt$')
         snapshots={
-            'isotopic_signatures':[{'id':s.id,'title':s.title,'status':s.status,'creator_id':s.creator_id,'image_file':s.image_file,'video_file':s.video_file,'formed_at':str(s.formed_at),'completed_at':str(s.completed_at)} for s in db.query(IsotopicSignature).order_by(IsotopicSignature.id)],
+            'isotopic_signatures':[{'id':s.id,'title':s.title,'status':s.status,'creator_id':s.creator_id,'image_file':s.image_file,'video_file':s.video_file,'formed_at':str(s.formed_at),'completed_at':str(s.completed_at),'deleted_at':str(s.deleted_at)} for s in db.query(IsotopicSignature).order_by(IsotopicSignature.id)],
             'users':[{'id':u.id,'username':u.username,'email':u.email} for u in db.query(User).order_by(User.id)],
             'signature_likes':[{'id':l.id,'user_id':l.user_id,'signature_id':l.signature_id} for l in db.query(SignatureLike).order_by(SignatureLike.id)]}
     # Check the actual PostgreSQL upgrade path using an isolated legacy schema.

@@ -32,6 +32,7 @@ class ServiceResponse(ServiceDraftResponse):
     creator_id: int
     moderator_id: int | None
     formed_at: datetime | None
+    deleted_at: datetime | None
     completed_at: datetime | None
     is_creator: Literal[0, 1]
     is_liked: Literal[0, 1]

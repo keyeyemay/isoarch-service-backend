@@ -3,7 +3,8 @@ from models import IsotopicSignature
 
 
 def published_query(db: Session):
-    return db.query(IsotopicSignature).filter(IsotopicSignature.status == "published")
+    return db.query(IsotopicSignature).filter(
+        IsotopicSignature.status == "published", IsotopicSignature.deleted_at.is_(None))
 
 
 def first_published(db: Session):
@@ -11,7 +12,13 @@ def first_published(db: Session):
 
 
 def by_id(db: Session, signature_id: int):
-    return db.get(IsotopicSignature, signature_id)
+    return db.query(IsotopicSignature).filter(
+        IsotopicSignature.id == signature_id, IsotopicSignature.status != "deleted",
+        IsotopicSignature.deleted_at.is_(None)).first()
+
+
+def published_by_id(db: Session, signature_id: int):
+    return published_query(db).filter(IsotopicSignature.id == signature_id).first()
 
 
 def next_published(db: Session, signature_id: int):
@@ -20,7 +27,7 @@ def next_published(db: Session, signature_id: int):
 
 
 def draft_for_user(db: Session, user_id: int):
-    return db.query(IsotopicSignature).filter_by(creator_id=user_id, status="draft").first()
+    return db.query(IsotopicSignature).filter_by(creator_id=user_id, status="draft", deleted_at=None).first()
 
 
 def search_published(db: Session, c13_max: float | None = None, filter_value: str = ""):

@@ -1,5 +1,8 @@
 # Диаграмма классов ЛР3
 
+Редактируемая версия по образцу `diagramexample.png`: [architecture_diagram.drawio](architecture_diagram.drawio).
+Файл содержит два листа: архитектуру и подробные поля моделей/схем.
+
 Имена таблиц указаны у ORM-моделей. Стрелки от страниц показывают фактические
 зависимости: GET формирует HTML через общий сервис, JS вызывает REST API.
 
@@ -29,6 +32,7 @@ classDiagram
         +datetime created_at
         +datetime formed_at
         +datetime completed_at
+        +datetime deleted_at
     }
     class SignatureLike {
         <<ORM signature_likes>>
@@ -47,12 +51,11 @@ classDiagram
     IsotopicSignature "1" -- "0..*" SignatureLike
     class ServicesAPI {
         <<interface>>
-        +GET /api/services/
-        +GET /api/services/feed
-        +GET /api/services/feed/id?next=true
+        +GET /api/services
+        +GET /api/services/feed?id=id&next=true
         +GET /api/services/draft
-        +POST /api/services/
-        +PUT /api/services/id/publish
+        +POST /api/services
+        +PUT /api/services/id
         +DELETE /api/services/id
         +POST /api/services/id/like
     }
@@ -121,3 +124,7 @@ classDiagram
 `UserRegister`, `UserResponse` (`api/schemas.py`). Дополнительные входные поля
 запрещены. Отдельной страницы авторизации в ЛР3 нет; login/logout — заглушки API.
 Служебные маршруты Swagger/OpenAPI и статика описаны в README.
+
+Лента без query-параметров возвращает первую запись; `id` выбирает запись,
+`next=true` — следующую. Это одна из 10 операций JSON API.
+`deleted_at` — маркер soft delete; `is_liked` — SQL EXISTS по текущему пользователю.

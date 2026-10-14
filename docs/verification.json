@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-09-30T09:53:18.133255+00:00",
+  "checked_at": "2026-10-14T12:52:39.758982+00:00",
   "database": "PostgreSQL",
   "media": "real MinIO",
   "checks": [
     {
       "check": "Published filtered list",
       "method": "GET",
-      "path": "/api/services/?c13_max=-15",
+      "path": "/api/services?c13_max=-15",
       "status": 200
     },
     {
@@ -18,7 +18,7 @@
     {
       "check": "Upload actual PNG and MP4",
       "method": "POST",
-      "path": "/api/services/",
+      "path": "/api/services",
       "status": 201
     },
     {
@@ -30,7 +30,7 @@
     {
       "check": "Publish draft",
       "method": "PUT",
-      "path": "/api/services/7/publish",
+      "path": "/api/services/7",
       "status": 200
     },
     {
@@ -52,7 +52,7 @@
     {
       "check": "Next published ID",
       "method": "GET",
-      "path": "/api/services/feed/1?next=true",
+      "path": "/api/services/feed?id=1&next=true",
       "status": 200
     },
     {
@@ -100,7 +100,7 @@
     {
       "check": "Reject system fields",
       "method": "PUT",
-      "path": "/api/services/7/publish",
+      "path": "/api/services/7",
       "status": 422
     },
     {
@@ -112,7 +112,7 @@
     {
       "check": "Hidden deleted service",
       "method": "GET",
-      "path": "/api/services/feed/7",
+      "path": "/api/services/feed?id=7",
       "status": 404
     },
     {
@@ -184,7 +184,8 @@
         "image_file": "default_signature.png",
         "video_file": "default_signature.mp4",
         "formed_at": "2024-03-12 14:30:00",
-        "completed_at": "None"
+        "completed_at": "None",
+        "deleted_at": "None"
       },
       {
         "id": 2,
@@ -194,7 +195,8 @@
         "image_file": "default_signature.png",
         "video_file": "default_signature.mp4",
         "formed_at": "2024-05-02 11:45:00",
-        "completed_at": "None"
+        "completed_at": "None",
+        "deleted_at": "None"
       },
       {
         "id": 3,
@@ -204,7 +206,8 @@
         "image_file": "default_signature.png",
         "video_file": "default_signature.mp4",
         "formed_at": "2023-11-20 16:20:00",
-        "completed_at": "None"
+        "completed_at": "None",
+        "deleted_at": "None"
       },
       {
         "id": 4,
@@ -214,7 +217,8 @@
         "image_file": "default_signature.png",
         "video_file": "default_signature.mp4",
         "formed_at": "2024-01-09 10:15:00",
-        "completed_at": "None"
+        "completed_at": "None",
+        "deleted_at": "None"
       },
       {
         "id": 5,
@@ -224,7 +228,8 @@
         "image_file": "default_signature.png",
         "video_file": "default_signature.mp4",
         "formed_at": "None",
-        "completed_at": "None"
+        "completed_at": "None",
+        "deleted_at": "None"
       },
       {
         "id": 6,
@@ -234,17 +239,19 @@
         "image_file": "default_signature.png",
         "video_file": "default_signature.mp4",
         "formed_at": "2023-08-01 13:00:00",
-        "completed_at": "None"
+        "completed_at": "2023-08-02 11:00:00",
+        "deleted_at": "2023-08-02 11:00:00"
       },
       {
         "id": 7,
         "title": "LR3 integration",
         "status": "deleted",
         "creator_id": 1,
-        "image_file": "5564f170ca3c45338f38eecd9794837a.png",
-        "video_file": "1eb9f36882534439afb6bd13fec3185a.mp4",
-        "formed_at": "2026-09-30 09:53:17.774899",
-        "completed_at": "2026-09-30 09:53:17.863250"
+        "image_file": "969660e5ed17489ea9649e4ddfc9b6a9.png",
+        "video_file": "0122ef4be50a42c48b24fb2ecce77bb9.mp4",
+        "formed_at": "2026-10-14 12:52:38.402176",
+        "completed_at": "2026-10-14 12:52:38.459946",
+        "deleted_at": "2026-10-14 12:52:38.459946"
       }
     ],
     "users": [
@@ -265,8 +272,8 @@
       },
       {
         "id": 4,
-        "username": "check_7553bb208ee9",
-        "email": "7553bb208ee9@example.org"
+        "username": "check_bab1ab2eecfa",
+        "email": "bab1ab2eecfa@example.org"
       }
     ],
     "signature_likes": [

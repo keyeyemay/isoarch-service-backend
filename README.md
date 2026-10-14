@@ -7,16 +7,19 @@
 
 ## REST API
 
+Контракт: ровно 10 операций из [Lab_3_updated.md](Lab_3_updated.md).
+Идентификатор ленты передаётся query-параметром `id`, поэтому оба сценария
+показа используют один метод. Отдельного `/feed/{id}` в JSON API нет.
+
 Базовый адрес: **`http://localhost:8000`** · JSON · Загрузка файлов: `multipart/form-data`
 
 | Метод | Маршрут | Назначение |
 |:---:|---|---|
-| **GET** | `/api/services/` | Опубликованные услуги; фильтры `c13_max` и `filter`; признак `is_creator` |
-| **GET** | `/api/services/feed` | Первая опубликованная услуга в ленте |
-| **GET** | `/api/services/feed/{id}?next=true` | Следующая публикация; переход по кругу |
+| **GET** | `/api/services` | Опубликованные услуги; фильтры `c13_max` и `filter`; признак `is_creator` |
+| **GET** | `/api/services/feed` | Лента: без параметров — первая запись; `?id={id}` — текущая; `?id={id}&next=true` — следующая |
 | **GET** | `/api/services/draft` | Собственный черновик без передачи ID |
-| **POST** | `/api/services/` | Создание черновика: `title`, файлы `image` и `video` |
-| **PUT** | `/api/services/{id}/publish` | Публикация: `description`, `delta_n15`, `delta_c13` |
+| **POST** | `/api/services` | Создание черновика: `title`, файлы `image` и `video` |
+| **PUT** | `/api/services/{id}` | Публикация: `description`, `delta_n15`, `delta_c13` |
 | **DELETE** | `/api/services/{id}` | Логическое удаление собственной услуги |
 | **POST** | `/api/services/{id}/like` | Установка или отмена лайка: `{"like": 1}` / `{"like": 0}` |
 | **POST** | `/api/users/register` | Регистрация: `username`, `password`, `full_name`, `email` |
@@ -28,7 +31,7 @@
 | Таблица | Назначение | Поля |
 |---|---|---|
 | **`users`** | Пользователи | `id`, `username`, `password`, `full_name`, `email`, `created_at` |
-| **`isotopic_signatures`** | Услуги — изотопные исследования | `id`, `title`, `description`, `status`, `image_file`, `video_file`, `delta_n15`, `delta_c13`, `creator_id`, `moderator_id`, `created_at`, `formed_at`, `completed_at` |
+| **`isotopic_signatures`** | Услуги — изотопные исследования | `id`, `title`, `description`, `status`, `image_file`, `video_file`, `delta_n15`, `delta_c13`, `creator_id`, `moderator_id`, `created_at`, `formed_at`, `completed_at`, `deleted_at` |
 | **`signature_likes`** | Связь пользователя с понравившейся услугой | `id`, `user_id`, `signature_id`, `created_at` |
 
 **Связи:** `creator_id`, `moderator_id`, `user_id` → `users.id`; `signature_id` → `isotopic_signatures.id`.<br>
@@ -58,7 +61,8 @@
 | isotopic_signatures | moderator_id | Integer, необязательный FK → users.id |
 | isotopic_signatures | created_at | DateTime, дата создания |
 | isotopic_signatures | formed_at | DateTime, дата публикации, NULL до публикации |
-| isotopic_signatures | completed_at | DateTime, дата удаления, NULL до удаления |
+| isotopic_signatures | completed_at | DateTime, дата завершения, NULL до удаления |
+| isotopic_signatures | deleted_at | DateTime, маркер soft delete, NULL до удаления |
 | signature_likes | id | Integer, PK |
 | signature_likes | user_id | Integer, обязательный FK → users.id |
 | signature_likes | signature_id | Integer, обязательный FK → isotopic_signatures.id |
@@ -77,7 +81,7 @@
 | Операция | Успешный ответ |
 |---|---|
 | Список | `200` — массив публикаций |
-| Лента | `200` — одна публикация; без `next=true` маршрут по ID возвращает текущую запись |
+| Лента | `200` — одна публикация; без `next=true` параметр `id` возвращает текущую запись |
 | Черновик | `200` — объект или `null`, если черновика нет |
 | Создание услуги | `201` — созданный черновик |
 | Публикация | `200` — опубликованная услуга |
@@ -91,7 +95,10 @@
 последней публикации возвращается первая. Пустая лента и скрытые ID дают 404.
 
 Ответ публикации содержит поля услуги, `is_creator` и `is_liked` (0/1),
-`likes_count`, `image_url`, `video_url`. Ответ черновика содержит ID, название,
+`likes_count`, `image_url`, `video_url`, `deleted_at` (для публикации NULL).
+`is_liked` вычисляется SQL-подзапросом EXISTS к таблице лайков с ID текущего
+пользователя. При установленном лайке в ленте появляется «Вы поставили лайк»;
+при отмене подпись исчезает; число лайков показывается отдельно. Ответ черновика содержит ID, название,
 описание, изотопные значения и имена файлов. Системные поля доступны только
 для чтения в ответе публикации.
 
@@ -126,13 +133,14 @@ FastAPI переиспользует результат в пределах за
 У пользователя не более одного черновика. Разрешены только переходы
 `draft → published`, `draft → deleted`, `published → deleted`.
 Публикация и удаление доступны только создателю. Возврата в черновик нет.
-Удаление сохраняет строку и файлы: это soft delete. Удалённые и чужие
+Удаление сохраняет строку и файлы: статус `deleted` и дата `deleted_at` задают soft delete.
+SQL-запросы исключают удалённые записи до формирования ответа. Удалённые и чужие
 черновики не выдаются в списке/ленте; даже страница ошибки не раскрывает их поля.
 
 `id`, `status`, `creator_id`, `moderator_id`, `created_at`, `formed_at`,
-`completed_at` нельзя передать для изменения. Дополнительные входные поля
+`completed_at`, `deleted_at` нельзя передать для изменения. Дополнительные входные поля
 отклоняются с 422. Создание вычисляет `created_at` и создателя; публикация
-выставляет `formed_at`; удаление — `completed_at`. У черновика `formed_at=NULL`.
+выставляет `formed_at`; удаление — `completed_at` и `deleted_at` одним временем. У черновика `formed_at=NULL`.
 Модератор остаётся NULL: в задании нет метода модерации. Даты — UTC.
 
 Лайки доступны только опубликованным услугам. Повторная установка/отмена
@@ -171,6 +179,14 @@ python main.py
 Перед обновлением собственной БД рекомендуется сохранить её резервную копию.
 Обратная миграция с удалением новых полей не предусмотрена.
 
+Если существующая БД используется ЛР4 (ревизия `0002_lr4_sessions`),
+для ЛР3 нужно выбрать отдельную БД; понижать ревизию ЛР4 нельзя.
+В текущем окружении уже создана `isoarch_lr3_db`, запуск:
+
+```bash
+DATABASE_URL=postgresql://isoarch_user:isoarch_password@localhost:5432/isoarch_lr3_db .venv/bin/python main.py
+```
+
 - Каталог: http://localhost:8000/api/pages/isotopic_signatures/list
 - Лента: http://localhost:8000/api/pages/isotopic_signatures/feed/1
 - Создание/публикация: http://localhost:8000/api/pages/isotopic_signatures/draft
@@ -196,6 +212,9 @@ python main.py
 
 ## Проверки и сдача
 
+[Актуальные результаты и команды](docs/verification_commands.md) ·
+[Полная сверка с заданием](docs/compliance.md)
+
 ```bash
 pip install -r requirements-dev.txt
 PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -v
@@ -211,10 +230,13 @@ HTTP-тесты используют SQLite в памяти и имитирую�
 [порядок сдачи](docs/lr3_submission.md), [SELECT](docs/lr3_select.sql),
 [контрольные вопросы](docs/control_questions.md), [этапы исправлений](AGENTS.md).
 Результат интеграционной проверки сохраняется в `docs/verification.json`.
-Postman-коллекция проверена Newman: 21 проверка без ошибок; краткий результат —
+Postman-коллекция содержит все 10 операций отдельными запросами, включая
+login и logout. Tests дополнительно проверяет следующую запись ленты,
+признак лайка и недоступность удалённой записи. Результат Newman —
 `docs/postman_verification.json`. Браузерные результаты —
 `docs/browser_verification.json`, реальные снимки интерфейса — `docs/screenshots/`.
 Эти снимки не заменяют скриншоты Postman/SQL-клиента из порядка сдачи.
+После обновления контракта снимки со старыми URL нужно переснять.
 
 При наличии Node.js и Playwright браузерную проверку можно повторить на
 отдельном тестовом сервере:

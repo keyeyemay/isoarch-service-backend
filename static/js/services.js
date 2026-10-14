@@ -59,6 +59,7 @@ document.querySelectorAll("[data-like]").forEach((button) => {
       const data = await apiRequest(`/api/services/${button.dataset.like}/like`, {
         method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({like})});
       button.dataset.liked = String(data.like);
+      document.querySelector("[data-liked-message]").textContent = data.like === 1 ? "Вы поставили лайк" : "";
       button.setAttribute("aria-pressed", String(data.like === 1));
       document.querySelector("[data-like-count]").textContent = data.likes_count;
     } catch (error) { showError(button, error); }
@@ -70,7 +71,7 @@ document.querySelectorAll("[data-next]").forEach((link) => {
   link.addEventListener("click", async (event) => {
     event.preventDefault();
     try {
-      const data = await apiRequest(`/api/services/feed/${link.dataset.next}?next=true`);
+      const data = await apiRequest(link.dataset.nextUrl);
       location.assign(link.dataset.feedBase.replace(/\/0$/, `/${data.id}`));
     } catch (error) { showError(link, error); }
   });

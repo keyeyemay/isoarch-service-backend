@@ -10,20 +10,15 @@ from services.presentation import isotopic_signature_display
 router = APIRouter(prefix="/api/services", tags=["Services API"])
 
 
-@router.get("/", response_model=list[ServiceResponse])
+@router.get("", response_model=list[ServiceResponse])
 def get_services(c13_max: float | None = None, filter: str = "", db: Session = Depends(get_db),
                  current_user: User = Depends(get_current_user)):
     return [isotopic_signature_display(s, current_user.id) for s in service.list_services(db, c13_max, filter)]
 
 
 @router.get("/feed", response_model=ServiceResponse)
-def get_feed(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return isotopic_signature_display(service.get_feed(db), current_user.id)
-
-
-@router.get("/feed/{id}", response_model=ServiceResponse)
-def get_feed_by_id(id: int, next: bool = False, db: Session = Depends(get_db),
-                   current_user: User = Depends(get_current_user)):
+def get_feed(id: int | None = None, next: bool = False, db: Session = Depends(get_db),
+             current_user: User = Depends(get_current_user)):
     return isotopic_signature_display(service.get_feed(db, id, next), current_user.id)
 
 
@@ -40,14 +35,14 @@ async def validate_create_fields(request: Request):
         raise HTTPException(422, "Duplicate form fields are not allowed")
 
 
-@router.post("/", response_model=ServiceDraftResponse, status_code=201,
+@router.post("", response_model=ServiceDraftResponse, status_code=201,
              dependencies=[Depends(validate_create_fields)])
 def create_draft(title: str = Form(...), image: UploadFile = File(...), video: UploadFile = File(...),
                  db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return service.create_draft(db, current_user.id, title, image, video)
 
 
-@router.put("/{id}/publish", response_model=ServiceResponse)
+@router.put("/{id}", response_model=ServiceResponse)
 def publish_draft(id: int, pub_data: PublishRequest, db: Session = Depends(get_db),
                   current_user: User = Depends(get_current_user)):
     return isotopic_signature_display(service.publish_draft(db, id, current_user.id, pub_data), current_user.id)
