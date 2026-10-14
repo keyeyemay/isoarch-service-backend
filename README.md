@@ -23,6 +23,9 @@ FastAPI · SQLAlchemy · PostgreSQL 16 · Redis 7 · MinIO · SPA на JavaScrip
 [пошаговая инструкция и скриншоты 1–9](docs/lr4_demo_steps.md),
 [отдельная коллекция](postman_demo_collection.json).
 
+[Подготовка к защите ЛР4](docs/lr4_defense_preparation.md): объяснение проекта,
+контрольные вопросы и примеры ответов для защиты.
+
 [Диаграмма последовательности в draw.io](lr4_sequence.drawio): полный HTTP-сценарий
 на листе 01, операции доменов на листе 02.
 
