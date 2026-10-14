@@ -6,7 +6,11 @@ DATABASE_URL = os.environ.get(
 )
 MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "http://localhost:9000")
 MEDIA_BUCKET = os.environ.get("MEDIA_BUCKET", "isoarchservice")
-CURRENT_USER_ID = 1
+SESSION_TTL_SECONDS = int(os.environ.get("SESSION_TTL_SECONDS", "86400"))
+if SESSION_TTL_SECONDS <= 0:
+    raise ValueError("SESSION_TTL_SECONDS must be positive")
+SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 DEFAULT_IMAGE_URL = "/static/images/default_signature.png"
 DEFAULT_VIDEO_URL = "/static/videos/default_signature.mp4"
 

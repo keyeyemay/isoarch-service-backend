@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Annotated, Literal
-from pydantic import BaseModel, ConfigDict, Field, StrictInt
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator
 
 
 class InputModel(BaseModel):
@@ -24,6 +24,8 @@ class ServiceDraftResponse(BaseModel):
     delta_c13: float | None
     image_file: str | None
     video_file: str | None
+    image_url: str
+    video_url: str
 
 
 class ServiceResponse(ServiceDraftResponse):
@@ -36,22 +38,38 @@ class ServiceResponse(ServiceDraftResponse):
     is_creator: Literal[0, 1]
     is_liked: Literal[0, 1]
     likes_count: int
-    image_url: str
-    video_url: str
 
 
 class PublishRequest(InputModel):
-    description: str = Field(min_length=1, max_length=10000)
-    delta_n15: float
-    delta_c13: float
+    title: str | None = Field(default=None, min_length=1, max_length=255, description="Название; если не задано, сохраняется прежнее")
+    description: str = Field(min_length=1, max_length=10000, description="Описание рациона и результатов исследования")
+    delta_n15: float = Field(description="Значение δ¹⁵N, ‰")
+    delta_c13: float = Field(description="Значение δ¹³C, ‰")
 
 
 class LikeRequest(InputModel):
     like: Annotated[StrictInt, Field(ge=0, le=1)]
 
 
-class UserRegister(InputModel):
+class UserLogin(InputModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=False)
     username: str = Field(min_length=1, max_length=100)
     password: str = Field(min_length=1, max_length=255)
+
+    @field_validator("username")
+    @classmethod
+    def clean_username(cls, value):
+        value = value.strip()
+        if not value:
+            raise ValueError("Username must not be blank")
+        return value
+
+
+class UserRegister(UserLogin):
     full_name: str | None = Field(default=None, max_length=255)
     email: str | None = Field(default=None, min_length=3, max_length=255, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
+class LikeResponse(BaseModel):
+    like: Literal[0, 1]
+    likes_count: int

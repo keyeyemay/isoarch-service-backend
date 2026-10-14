@@ -1,0 +1,211 @@
+{
+  "checked_at": "2026-10-14T00:38:36.676519+00:00",
+  "database": "postgresql",
+  "media": "real MinIO",
+  "sessions": "real Redis",
+  "result": "passed",
+  "checks": [
+    {
+      "check": "Guest published list",
+      "method": "GET",
+      "path": "/services?c13_max=-15",
+      "http_code": 200
+    },
+    {
+      "check": "Guest private draft rejected",
+      "method": "GET",
+      "path": "/services/draft",
+      "http_code": 401
+    },
+    {
+      "check": "Guest write rejected",
+      "method": "POST",
+      "path": "/services/1/like",
+      "http_code": 401
+    },
+    {
+      "check": "Register creator",
+      "method": "POST",
+      "path": "/auth/register",
+      "http_code": 201
+    },
+    {
+      "check": "Duplicate email rejected",
+      "method": "POST",
+      "path": "/auth/register",
+      "http_code": 409
+    },
+    {
+      "check": "Wrong password rejected",
+      "method": "POST",
+      "path": "/auth/login",
+      "http_code": 401
+    },
+    {
+      "check": "Login sets cookie",
+      "method": "POST",
+      "path": "/auth/login",
+      "http_code": 200
+    },
+    {
+      "check": "Real Redis session user and TTL",
+      "result": "passed"
+    },
+    {
+      "check": "Session identity",
+      "method": "GET",
+      "path": "/auth/me",
+      "http_code": 200
+    },
+    {
+      "check": "Own draft absent",
+      "method": "GET",
+      "path": "/services/draft",
+      "http_code": 200
+    },
+    {
+      "check": "Upload actual binary PNG/MP4",
+      "method": "POST",
+      "path": "/services",
+      "http_code": 201
+    },
+    {
+      "check": "Own draft without ID",
+      "method": "GET",
+      "path": "/services/draft",
+      "http_code": 200
+    },
+    {
+      "check": "Second draft rejected",
+      "method": "POST",
+      "path": "/services",
+      "http_code": 409
+    },
+    {
+      "check": "Publish own draft",
+      "method": "PUT",
+      "path": "/services/7",
+      "http_code": 200
+    },
+    {
+      "check": "Update published fields",
+      "method": "PUT",
+      "path": "/services/7",
+      "http_code": 200
+    },
+    {
+      "check": "Assignment cookie spelling",
+      "method": "GET",
+      "path": "/auth/me",
+      "http_code": 200
+    },
+    {
+      "check": "Real MinIO image_url",
+      "bytes": 5152,
+      "http_code": 200
+    },
+    {
+      "check": "Real MinIO video_url",
+      "bytes": 22348,
+      "http_code": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/services/7/like",
+      "http_code": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/services/7/like",
+      "http_code": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/services/7/like",
+      "http_code": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/services/7/like",
+      "http_code": 200
+    },
+    {
+      "check": "Idempotent like/unlike",
+      "method": "POST",
+      "path": "/services/7/like",
+      "http_code": 200
+    },
+    {
+      "check": "Public feed",
+      "method": "GET",
+      "path": "/services/feed",
+      "http_code": 200
+    },
+    {
+      "check": "Next feed",
+      "method": "GET",
+      "path": "/services/feed/1?next=true",
+      "http_code": 200
+    },
+    {
+      "check": "Reject creator injection",
+      "method": "PUT",
+      "path": "/services/7",
+      "http_code": 422
+    },
+    {
+      "check": "Independent user session and ownership",
+      "result": "passed"
+    },
+    {
+      "check": "Soft delete",
+      "method": "DELETE",
+      "path": "/services/7",
+      "http_code": 204
+    },
+    {
+      "check": "Deleted record hidden",
+      "method": "GET",
+      "path": "/services/feed/7",
+      "http_code": 404
+    },
+    {
+      "check": "Logout",
+      "method": "POST",
+      "path": "/auth/logout",
+      "http_code": 204
+    },
+    {
+      "check": "Logged out denied",
+      "method": "GET",
+      "path": "/services/draft",
+      "http_code": 401
+    },
+    {
+      "check": "Revoked cookie cannot be replayed",
+      "method": "GET",
+      "path": "/auth/me",
+      "http_code": 401
+    },
+    {
+      "check": "Swagger",
+      "method": "GET",
+      "path": "/docs",
+      "http_code": 200
+    },
+    {
+      "check": "OpenAPI",
+      "method": "GET",
+      "path": "/openapi.json",
+      "http_code": 200
+    },
+    {
+      "check": "PostgreSQL soft delete, preserved like, password hash; Redis session revoked",
+      "result": "passed"
+    }
+  ]
+}

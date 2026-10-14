@@ -1,0 +1,15 @@
+{
+  "checked_at": "2026-10-14T00:42:01.057Z",
+  "checks": [
+    "Guest catalog, filter, hidden delete buttons",
+    "Private route opens login; registration and login return to draft",
+    "Binary upload, own draft and publication",
+    "Author edits published title, description and isotope values through SPA",
+    "Like, unlike and next feed navigation",
+    "Own soft delete and deleted data hidden",
+    "Logout revokes session; SPA actions keep document; no JavaScript errors",
+    "Swagger renders all 12 methods without external network requests"
+  ],
+  "result": "passed",
+  "screenshots": "docs/lr4_screenshots"
+}

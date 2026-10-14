@@ -1,13 +1,24 @@
 {
   "info": {
-    "name": "IsoArch LR3 API",
-    "description": "10 демонстрационных запросов. Working directory: корень проекта. GET draft должен быть null перед началом.",
+    "name": "IsoArch LR4 — cookie sessions",
+    "description": "Последовательный сценарий на тестовой БД. В Settings коллекции отключён cookie jar: после login UUID сохраняется в session_id и явно передаётся через Headers Cookie: session_id={{session_id}}. Для ручного показа скопируйте UUID из Set-Cookie. Working directory: корень репозитория.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "protocolProfileBehavior": {
+    "disableCookies": true
   },
   "variable": [
     {
       "key": "base_url",
       "value": "http://localhost:8000"
+    },
+    {
+      "key": "session_id",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
     },
     {
       "key": "service_id",
@@ -24,11 +35,11 @@
   ],
   "item": [
     {
-      "name": "1. Список с фильтром",
+      "name": "1. Публичный список без сессии",
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{base_url}}/api/services/?c13_max=-15"
+        "url": "{{base_url}}/services?c13_max=-15"
       },
       "event": [
         {
@@ -37,7 +48,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Only published, filter and creator flag\", () => pm.response.json().forEach(s => { pm.expect(s.status).to.eql(\"published\"); pm.expect(s.delta_c13).to.be.at.most(-15); pm.expect([0,1]).to.include(s.is_creator); }));"
+              "pm.test(\"Guest flags\", () => pm.response.json().forEach(s => { pm.expect(s.status).to.eql(\"published\"); pm.expect(s.is_creator).to.eql(0); }));"
             ]
           }
         }
@@ -45,17 +56,177 @@
       "response": []
     },
     {
-      "name": "2. Создать с фото и видео",
+      "name": "2. Черновик гостю запрещён",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/services/draft"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "3. Регистрация",
       "request": {
         "method": "POST",
-        "header": [],
-        "url": "{{base_url}}/api/services/",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"lr4_{{registration_suffix}}\", \"password\": \"StudyPassword123\", \"full_name\": \"Исследователь ЛР4\", \"email\": \"lr4_{{registration_suffix}}@example.org\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"registration_suffix\", pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\"));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"Password hidden\", () => pm.expect(pm.response.json()).not.to.have.property(\"password\"));",
+              "pm.collectionVariables.set(\"user_id\", pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "4. Вход; скопировать Set-Cookie для ручной демонстрации",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\": \"lr4_{{registration_suffix}}\", \"password\": \"StudyPassword123\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const cookie = pm.response.headers.get(\"Set-Cookie\");",
+              "const match = cookie && cookie.match(/session_id=([^;]+)/);",
+              "pm.test(\"Session cookie and HttpOnly\", () => { pm.expect(match).not.to.eql(null); pm.expect(cookie).to.include(\"HttpOnly\"); });",
+              "if (match) pm.collectionVariables.set(\"session_id\", match[1]);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "5. Текущий пользователь — ручной Cookie Header",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          }
+        ],
+        "url": "{{base_url}}/auth/me"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Session identity\", () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get(\"user_id\"))));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "6. Черновик отсутствует",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          }
+        ],
+        "url": "{{base_url}}/services/draft"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"No draft\", () => pm.expect(pm.response.json()).to.eql(null));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "7. Создать с бинарными фото и видео",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          }
+        ],
+        "url": "{{base_url}}/services",
         "body": {
           "mode": "formdata",
           "formdata": [
             {
               "key": "title",
-              "value": "Исследование ЛР3",
+              "value": "Исследование ЛР4",
               "type": "text"
             },
             {
@@ -78,8 +249,8 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "const s = pm.response.json(); pm.collectionVariables.set(\"service_id\", s.id);",
-              "pm.test(\"Latin object names\", () => { pm.expect(s.image_file).to.match(/^[a-f0-9]{32}\\.png$/); pm.expect(s.video_file).to.match(/^[a-f0-9]{32}\\.mp4$/); });"
+              "pm.collectionVariables.set(\"service_id\", pm.response.json().id);",
+              "pm.test(\"Object names\", () => pm.expect(pm.response.json().image_file).to.match(/^[a-f0-9]{32}\\.png$/));"
             ]
           }
         }
@@ -87,11 +258,16 @@
       "response": []
     },
     {
-      "name": "3. Собственный черновик без ID",
+      "name": "8. Свой черновик по сессии",
       "request": {
         "method": "GET",
-        "header": [],
-        "url": "{{base_url}}/api/services/draft"
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          }
+        ],
+        "url": "{{base_url}}/services/draft"
       },
       "event": [
         {
@@ -100,7 +276,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Created draft\", () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get(\"service_id\"))));"
+              "pm.test(\"Own draft\", () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get(\"service_id\"))));"
             ]
           }
         }
@@ -108,16 +284,20 @@
       "response": []
     },
     {
-      "name": "4. Публикация",
+      "name": "9. Публикация",
       "request": {
         "method": "PUT",
         "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          },
           {
             "key": "Content-Type",
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/api/services/{{service_id}}/publish",
+        "url": "{{base_url}}/services/{{service_id}}",
         "body": {
           "mode": "raw",
           "raw": "{\"description\": \"Изотопный анализ: смешанный рацион\", \"delta_n15\": 9.4, \"delta_c13\": -18.2}",
@@ -135,7 +315,8 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Published by current user\", () => { const s=pm.response.json(); pm.expect(s.status).to.eql(\"published\"); pm.expect(s.is_creator).to.eql(1); pm.expect(s.formed_at).to.be.a(\"string\"); });"
+              "pm.test(\"Author from session\", () => { const s=pm.response.json(); pm.expect(s.is_creator).to.eql(1); pm.expect(String(s.creator_id)).to.eql(String(pm.collectionVariables.get(\"user_id\"))); pm.expect(s.status).to.eql(\"published\"); });",
+              "pm.collectionVariables.set(\"formed_at\", pm.response.json().formed_at);"
             ]
           }
         }
@@ -143,59 +324,100 @@
       "response": []
     },
     {
-      "name": "5. Лента без ID",
+      "name": "9a. Обновление опубликованной записи",
       "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{base_url}}/api/services/feed"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.collectionVariables.set(\"feed_id\", pm.response.json().id);",
-              "pm.test(\"One published record\", () => pm.expect(pm.response.json().status).to.eql(\"published\"));"
-            ]
-          }
-        }
-      ],
-      "response": []
-    },
-    {
-      "name": "6. Следующая публикация по ID",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{base_url}}/api/services/feed/{{feed_id}}?next=true"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Next published record\", () => { pm.expect(pm.response.json().status).to.eql(\"published\"); pm.expect(String(pm.response.json().id)).not.to.eql(String(pm.collectionVariables.get(\"feed_id\"))); });"
-            ]
-          }
-        }
-      ],
-      "response": []
-    },
-    {
-      "name": "7. Лайк от текущего пользователя",
-      "request": {
-        "method": "POST",
+        "method": "PUT",
         "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          },
           {
             "key": "Content-Type",
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/api/services/{{service_id}}/like",
+        "url": "{{base_url}}/services/{{service_id}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"title\": \"Обновлённое исследование\", \"description\": \"Уточнённый рацион\", \"delta_n15\": 10.5, \"delta_c13\": -19}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Updated publication\", () => { const s=pm.response.json(); pm.expect(s.title).to.eql(\"Обновлённое исследование\"); pm.expect(s.description).to.eql(\"Уточнённый рацион\"); pm.expect(s.formed_at).to.eql(pm.collectionVariables.get(\"formed_at\")); pm.expect(s.status).to.eql(\"published\"); });"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "10. Публичная лента",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/services/feed"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set(\"feed_id\", pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "11. Следующая запись",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/services/feed/{{feed_id}}?next=true"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "12. Лайк",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/services/{{service_id}}/like",
         "body": {
           "mode": "raw",
           "raw": "{\"like\": 1}",
@@ -213,7 +435,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Like set\", () => pm.expect(pm.response.json().like).to.eql(1));"
+              "pm.test(\"Like value\", () => pm.expect(pm.response.json().like).to.eql(1));"
             ]
           }
         }
@@ -221,11 +443,55 @@
       "response": []
     },
     {
-      "name": "8. Soft delete созданной услуги",
+      "name": "13. Снять лайк",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/services/{{service_id}}/like",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"like\": 0}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Like value\", () => pm.expect(pm.response.json().like).to.eql(0));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "14. Soft delete",
       "request": {
         "method": "DELETE",
-        "header": [],
-        "url": "{{base_url}}/api/services/{{service_id}}"
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          }
+        ],
+        "url": "{{base_url}}/services/{{service_id}}"
       },
       "event": [
         {
@@ -242,43 +508,19 @@
       "response": []
     },
     {
-      "name": "9. Регистрация",
+      "name": "15. Удалённая запись скрыта",
       "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "{{base_url}}/api/users/register",
-        "body": {
-          "mode": "raw",
-          "raw": "{\"username\": \"lr3_{{registration_suffix}}\", \"password\": \"StudyPassword123\", \"full_name\": \"Исследователь ЛР3\", \"email\": \"lr3_{{registration_suffix}}@example.org\"}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        }
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/services/feed/{{service_id}}"
       },
       "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.collectionVariables.set(\"registration_suffix\", String(Date.now()));"
-            ]
-          }
-        },
         {
           "listen": "test",
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "pm.test(\"No password in response\", () => pm.expect(pm.response.json()).not.to.have.property(\"password\"));"
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
             ]
           }
         }
@@ -286,11 +528,16 @@
       "response": []
     },
     {
-      "name": "10. Заглушки login и logout",
+      "name": "16. Выход и отзыв сессии",
       "request": {
         "method": "POST",
-        "header": [],
-        "url": "{{base_url}}/api/users/login"
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          }
+        ],
+        "url": "{{base_url}}/auth/logout"
       },
       "event": [
         {
@@ -298,9 +545,33 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Authentication remains a stub\", () => pm.expect(pm.response.json().authenticated).to.eql(false));",
-              "pm.sendRequest({url: pm.variables.replaceIn(\"{{base_url}}/api/users/logout\"), method: \"POST\"}, (error, response) => { pm.test(\"Logout stub HTTP 200\", () => { pm.expect(error).to.eql(null); pm.expect(response.code).to.eql(200); }); console.log(\"Logout:\", response.json()); });"
+              "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Cookie cleared\", () => pm.expect(pm.response.headers.get(\"Set-Cookie\")).to.include(\"Max-Age=0\"));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "17. Отозванная сессия не работает",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Cookie",
+            "value": "session_id={{session_id}}"
+          }
+        ],
+        "url": "{{base_url}}/services/draft"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
             ]
           }
         }

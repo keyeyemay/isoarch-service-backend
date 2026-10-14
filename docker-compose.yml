@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
   postgres:
     container_name: isoarch_postgres
     image: postgres:16-alpine
@@ -48,5 +61,6 @@ services:
     command: server /data --console-address ":9001"
 
 volumes:
+  redis-data:
   postgres-data:
   minio-data:

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from db.base import Base
 from db.session import SessionLocal, engine
 from models import IsotopicSignature, SignatureLike, User
+from services.auth import hash_password
 
 
 def seed_database(db: Session | None = None):
@@ -23,21 +24,21 @@ def seed_database(db: Session | None = None):
                 username="archaeologist_main",
                 full_name="Д-р Иванов А.С. (Лаборатория изотопного анализа)",
                 email="ivanov@isoarch.org",
-                password="hashed_password_1",
+                password=hash_password("StudyPassword123"),
             )
             user2 = User(
                 id=2,
                 username="researcher_petrov",
                 full_name="Петров В.В. (Институт археологии РАН)",
                 email="petrov@archaeo.ru",
-                password="hashed_password_2",
+                password=hash_password("StudyPassword123"),
             )
             user3 = User(
                 id=3,
                 username="student_sidorov",
                 full_name="Сидоров К.М. (Кафедра археологии)",
                 email="sidorov@uni.edu",
-                password="hashed_password_3",
+                password=hash_password("StudyPassword123"),
             )
             db.add_all([user1, user2, user3])
             db.commit()

@@ -1,156 +1,27 @@
 # IsoArch · Изотопные сигнатуры
 
-> **Лабораторная работа №3 · Вариант 18**<br>
-> Веб-сервис исследований костных останков: δ¹⁵N, δ¹³C, описание рациона, фото, короткое видео и лайки.
+**Лабораторная работа №4 · Вариант 18.** Веб-сервис исследований костных
+останков: δ¹⁵N, δ¹³C, описание рациона, фото, короткое видео и лайки.
 
-**Backend:** FastAPI · **ORM:** SQLAlchemy · **СУБД:** PostgreSQL 16 · **Медиа:** MinIO
+FastAPI · SQLAlchemy · PostgreSQL 16 · Redis 7 · MinIO · SPA на JavaScript.
 
-## REST API
+## Что изменено после ЛР3
 
-Базовый адрес: **`http://localhost:8000`** · JSON · Загрузка файлов: `multipart/form-data`
+Фиксированный пользователь заменён авторизацией через серверные сессии в Redis
+и cookie. Добавлены настоящий вход, выход, срок действия сессии и страница
+регистрации/авторизации. Чтение публикаций публичное; собственный черновик,
+создание, публикация, удаление и лайки требуют входа. Интерфейс стал SPA:
+переходы между экранами и операции выполняются через AJAX без перезагрузки
+документа. Swagger описывает cookie-авторизацию, входные и выходные схемы,
+параметры и ограничения прав.
 
-| Метод | Маршрут | Назначение |
-|:---:|---|---|
-| **GET** | `/api/services/` | Опубликованные услуги; фильтры `c13_max` и `filter`; признак `is_creator` |
-| **GET** | `/api/services/feed` | Первая опубликованная услуга в ленте |
-| **GET** | `/api/services/feed/{id}?next=true` | Следующая публикация; переход по кругу |
-| **GET** | `/api/services/draft` | Собственный черновик без передачи ID |
-| **POST** | `/api/services/` | Создание черновика: `title`, файлы `image` и `video` |
-| **PUT** | `/api/services/{id}/publish` | Публикация: `description`, `delta_n15`, `delta_c13` |
-| **DELETE** | `/api/services/{id}` | Логическое удаление собственной услуги |
-| **POST** | `/api/services/{id}/like` | Установка или отмена лайка: `{"like": 1}` / `{"like": 0}` |
-| **POST** | `/api/users/register` | Регистрация: `username`, `password`, `full_name`, `email` |
-| **POST** | `/api/users/login` | Заглушка аутентификации для ЛР4 |
-| **POST** | `/api/users/logout` | Заглушка деавторизации для ЛР4 |
+[Задание](Lab4_FastAPI.md) · [Общая диаграмма классов](docs/lr4_architecture.md) ·
+[Соответствие требованиям и сдача](docs/lr4_submission.md) ·
+[Postman](postman_collection.json).
 
-## Таблицы PostgreSQL
-
-| Таблица | Назначение | Поля |
-|---|---|---|
-| **`users`** | Пользователи | `id`, `username`, `password`, `full_name`, `email`, `created_at` |
-| **`isotopic_signatures`** | Услуги — изотопные исследования | `id`, `title`, `description`, `status`, `image_file`, `video_file`, `delta_n15`, `delta_c13`, `creator_id`, `moderator_id`, `created_at`, `formed_at`, `completed_at` |
-| **`signature_likes`** | Связь пользователя с понравившейся услугой | `id`, `user_id`, `signature_id`, `created_at` |
-
-**Связи:** `creator_id`, `moderator_id`, `user_id` → `users.id`; `signature_id` → `isotopic_signatures.id`.<br>
-**Ограничения:** один черновик на пользователя; один лайк на пару пользователь–услуга; `ON DELETE RESTRICT`.
-
-<details>
-<summary><strong>Типы полей, ключи и индексы</strong></summary>
-
-Модели находятся в `models/`. FK используют `ON DELETE RESTRICT`; каскадного
-удаления нет. `alembic_version` — служебная таблица номера миграции.
-
-| Таблица | Поле | Тип / смысл |
-|---|---|---|
-| users | id | Integer, PK |
-| users | username | String(100), обязательный, уникальный |
-| users | password | String(255), обязательный, хеш |
-| users | full_name | String(255), NULL допустим |
-| users | email | String(255), уникальный, NULL допустим |
-| users | created_at | DateTime, автоматически при создании |
-| isotopic_signatures | id | Integer, PK |
-| isotopic_signatures | title | String(255), обязательный |
-| isotopic_signatures | description | Text, описание |
-| isotopic_signatures | status | String(50), CHECK: draft/published/deleted |
-| isotopic_signatures | image_file / video_file | String(500), имена объектов MinIO |
-| isotopic_signatures | delta_n15 / delta_c13 | Float, δ¹⁵N / δ¹³C |
-| isotopic_signatures | creator_id | Integer, обязательный FK → users.id |
-| isotopic_signatures | moderator_id | Integer, необязательный FK → users.id |
-| isotopic_signatures | created_at | DateTime, дата создания |
-| isotopic_signatures | formed_at | DateTime, дата публикации, NULL до публикации |
-| isotopic_signatures | completed_at | DateTime, дата удаления, NULL до удаления |
-| signature_likes | id | Integer, PK |
-| signature_likes | user_id | Integer, обязательный FK → users.id |
-| signature_likes | signature_id | Integer, обязательный FK → isotopic_signatures.id |
-| signature_likes | created_at | DateTime, дата лайка |
-| alembic_version | version_num | String(32), PK, применённая миграция |
-
-Индексы: `uq_user_single_draft` — уникальный creator_id только при status=draft;
-`uq_user_signature_like` — уникальная пара user_id/signature_id.
-
-
-</details>
-
-<details>
-<summary><strong>Форматы ответов, HTTP-статусы и загрузка медиа</strong></summary>
-
-| Операция | Успешный ответ |
-|---|---|
-| Список | `200` — массив публикаций |
-| Лента | `200` — одна публикация; без `next=true` маршрут по ID возвращает текущую запись |
-| Черновик | `200` — объект или `null`, если черновика нет |
-| Создание услуги | `201` — созданный черновик |
-| Публикация | `200` — опубликованная услуга |
-| Удаление | `204` — без тела ответа |
-| Лайк | `200` — `like`, `likes_count` |
-| Регистрация | `201` — пользователь без пароля; `full_name` и `email` необязательны |
-| Login / logout | `200` — сообщение заглушки |
-
-Фильтры списка можно использовать совместно: `c13_max` задаёт верхний порог
-δ¹³C, `filter` ищет по названию. Лента упорядочена по возрастанию ID; после
-последней публикации возвращается первая. Пустая лента и скрытые ID дают 404.
-
-Ответ публикации содержит поля услуги, `is_creator` и `is_liked` (0/1),
-`likes_count`, `image_url`, `video_url`. Ответ черновика содержит ID, название,
-описание, изотопные значения и имена файлов. Системные поля доступны только
-для чтения в ответе публикации.
-
-Создание принимает PNG/JPEG/WebP до 10 МиБ и MP4 до 64 МиБ и 60 секунд.
-Проверяются MIME, сигнатура изображения, структура MP4 и длительность `mvhd`.
-Имена объектов — UUID с расширением из проверенного MIME, всегда на латинице.
-Оба файла проверяются перед загрузкой. При отказе MinIO черновик не сохраняется;
-при ошибке второй загрузки или записи БД уже загруженные объекты удаляются.
-Если MinIO недоступен и при уборке, ошибка уборки записывается в серверный лог.
-
-Ошибки: 403 — чужая услуга; 404 — отсутствующая/скрытая запись;
-409 — повторный черновик, недопустимый статус или занятый логин/email;
-413 — превышен размер; 422 — неверные поля/файлы; 503 — отказ MinIO.
-Пароли новых пользователей хранятся как scrypt-хеш, в ответах не возвращаются.
-Старые пользователи ЛР2 без пароля получают техническое значение `legacy-account`;
-оно не используется для входа, поскольку login пока является заглушкой.
-
-
-</details>
-
----
-
-[Диаграмма классов](architecture_diagram.md) · [Коллекция Postman](postman_collection.json) · [Порядок сдачи](docs/lr3_submission.md) · [Соответствие ЛР3](docs/compliance.md)
-
-## Бизнес-правила
-
-`get_current_user()` в `api/dependencies.py` — общая singleton dependency:
-пользователь всегда определяется константой `CURRENT_USER_ID = 1`.
-FastAPI переиспользует результат в пределах запроса. Регистрация, login/logout
-не меняют текущего создателя: полноценная авторизация относится к ЛР4.
-
-У пользователя не более одного черновика. Разрешены только переходы
-`draft → published`, `draft → deleted`, `published → deleted`.
-Публикация и удаление доступны только создателю. Возврата в черновик нет.
-Удаление сохраняет строку и файлы: это soft delete. Удалённые и чужие
-черновики не выдаются в списке/ленте; даже страница ошибки не раскрывает их поля.
-
-`id`, `status`, `creator_id`, `moderator_id`, `created_at`, `formed_at`,
-`completed_at` нельзя передать для изменения. Дополнительные входные поля
-отклоняются с 422. Создание вычисляет `created_at` и создателя; публикация
-выставляет `formed_at`; удаление — `completed_at`. У черновика `formed_at=NULL`.
-Модератор остаётся NULL: в задании нет метода модерации. Даты — UTC.
-
-Лайки доступны только опубликованным услугам. Повторная установка/отмена
-идемпотентна; уникальная пара пользователь–услуга исключает дубли.
-
-## Страницы приложения
-
-| URL | Шаблон | Используемые сценарии |
-|---|---|---|
-| `/api/pages/isotopic_signatures/list` | `tiles.html` | Общая ORM-выборка списка; JS вызывает DELETE API только для своих услуг |
-| `/api/pages/isotopic_signatures/feed/{id}` | `feed.html` | Общая выборка ленты; JS вызывает GET следующей записи и POST like |
-| `/api/pages/isotopic_signatures/draft` | `add.html` | Общая выборка собственного черновика; POST с файлами, PUT публикации, DELETE черновика |
-| `/api/pages/isotopic_signatures/unavailable` | `deleted.html` | Нейтральная страница 404 без полей записи; общая выборка для навигации |
-
-Шаблоны первоначально формируются сервером; сценарии изменения данных используют
-те же JSON API, что и будущая SPA. Старых POST-обработчиков HTML больше нет.
-Служебные GET: `/api/docs`, `/api/docs/oauth2-redirect`, `/api/redoc`,
-`/api/openapi.json`; `/static/{path}` обслуживает CSS/JS и локальные запасные медиа.
+Для показа Swagger → ручная cookie → Postman → Redis:
+[пошаговая инструкция и скриншоты 1–9](docs/lr4_demo_steps.md),
+[отдельная коллекция](postman_demo_collection.json).
 
 ## Запуск
 
@@ -164,24 +35,130 @@ docker compose up -d --wait
 python main.py
 ```
 
-При запуске Alembic создаёт новую схему или обновляет старую схему ЛР2
-без удаления записей, затем настраивается MinIO и добавляются демонстрационные
-данные в пустую БД. В MinIO помещаются настоящие демонстрационные фото/видео.
-Если БД или MinIO недоступны, запуск завершается с ошибкой, а не имитирует успех.
-Перед обновлением собственной БД рекомендуется сохранить её резервную копию.
-Обратная миграция с удалением новых полей не предусмотрена.
+- SPA: http://localhost:8000/ (каталог, лента, черновик, недоступная запись, вход).
+- Swagger: http://localhost:8000/docs; ReDoc: http://localhost:8000/redoc.
+- OpenAPI: http://localhost:8000/openapi.json.
+- Adminer: http://localhost:8080 — PostgreSQL, сервер `postgres`, БД `isoarch_db`,
+  пользователь `isoarch_user`, пароль `isoarch_password`.
+- MinIO: http://localhost:9001 — `root` / `rootpassword`; API: порт 9000.
+- Redis: `localhost:6379`; проверка `docker compose exec redis redis-cli PING`.
 
-- Каталог: http://localhost:8000/api/pages/isotopic_signatures/list
-- Лента: http://localhost:8000/api/pages/isotopic_signatures/feed/1
-- Создание/публикация: http://localhost:8000/api/pages/isotopic_signatures/draft
-- Недоступная запись: http://localhost:8000/api/pages/isotopic_signatures/unavailable
-- Swagger: http://localhost:8000/api/docs
-- Adminer: http://localhost:8080 — PostgreSQL, сервер `postgres`,
-  БД `isoarch_db`, пользователь `isoarch_user`, пароль `isoarch_password`.
-- MinIO: API http://localhost:9000, консоль http://localhost:9001,
-  пользователь `root`, пароль `rootpassword`.
+При запуске Alembic обновляет схему без удаления данных ЛР3, настраивается
+MinIO, а в пустую БД добавляются демонстрационные данные и медиа.
+Миграция `0002_lr4_sessions` сохранена для совместимости с промежуточной
+версией ЛР4: таблица `auth_sessions` больше не используется для входа.
+При недоступной БД/Redis/MinIO запуск завершается с ошибкой.
 
-Настройки через переменные окружения:
+**В новой пустой БД** у демонстрационных пользователей `archaeologist_main`,
+`researcher_petrov`, `student_sidorov` пароль `StudyPassword123`.
+У `researcher_petrov` уже есть демонстрационный черновик.
+В существующей БД пароли не меняются: реальные scrypt-пароли ЛР3 продолжают
+работать; технические `hashed_password_*` и `legacy-account` не подходят
+для входа. Для таких БД зарегистрируйте нового пользователя через SPA/API.
+
+## REST API
+
+Все ответы JSON, кроме пустого ответа 204. Файлы — `multipart/form-data`.
+Успех/ошибка определяется HTTP-кодом, без `status: success/error`.
+Поле `status: published` в услуге — её состояние в предметной области.
+
+| Метод | Маршрут | Доступ и назначение |
+|---|---|---|
+| POST | `/auth/register` | Гость: `username`, `password`, необязательные `full_name`, `email`; 201 |
+| POST | `/auth/login` | Гость: `username`, `password`; 200, пользователь и Set-Cookie |
+| POST | `/auth/logout` | Удалить текущую сессию и cookie; 204; повторный выход допустим |
+| GET | `/auth/me` | Сессия: пользователь без пароля; 200 |
+| GET | `/services` | Публичный список опубликованных; фильтры `c13_max`, `filter` |
+| GET | `/services/feed` | Первая опубликованная запись; 404 при пустой ленте |
+| GET | `/services/feed/{id}?next=true` | Публичная лента; следующая по ID, переход по кругу |
+| GET | `/services/draft` | Сессия: свой черновик или `null`, без ID в URL |
+| POST | `/services` | Сессия: `title`, бинарные `image`, `video`; 201 |
+| PUT | `/services/{id}` | Автор: `description`, `delta_n15`, `delta_c13`, необязательный `title`; публикация или редактирование; 200 |
+| DELETE | `/services/{id}` | Автор: soft delete; 204 |
+| POST | `/services/{id}/like` | Сессия: `{"like":1}` / `{"like":0}`; 200, `like`, `likes_count` |
+
+Публичные ответы содержат `is_creator`, `is_liked` (числа 0/1), `likes_count`,
+`image_url`, `video_url`. Для гостя персональные флаги равны 0.
+Пользователь определяется только по cookie; передать `creator_id` нельзя.
+Результаты, зависящие от сессии, возвращаются с `Cache-Control: no-store`.
+
+Совместимость: прежние `/api/services/...`, `PUT /api/services/{id}/publish`
+и `/api/users/{register,login,logout}` работают с новой проверкой сессии.
+`/api/docs` перенаправляет на `/docs`. Старые URL HTML-страниц открывают SPA.
+
+Ошибки: 401 — нет действующей сессии/неверные реквизиты; 403 — чужая запись;
+404 — запись скрыта или отсутствует; 409 — занятый логин/email, второй черновик
+или неверный переход состояния; 413 — слишком большой файл; 422 — неверные
+поля/файлы; 503 — отказ MinIO. Дополнительные входные поля отклоняются.
+
+## Сессии и права
+
+Вход создаёт случайный UUID в cookie `session_id` (`HttpOnly`, `SameSite=Lax`,
+`Path=/`, срок по умолчанию сутки). Redis хранит SHA-256 токена и
+ID пользователя: ключ `isoarch:session:<SHA-256(UUID)>`, значение — ID,
+TTL по умолчанию 86400 секунд. Повторный вход атомарно заменяет
+текущую сессию. Выход удаляет ключ из Redis и cookie, поэтому повторное
+использование старого токена возвращает 401. Сессии сохраняются между
+перезапусками приложения; истёкшие ключи автоматически удаляет Redis.
+Docker Compose включает AOF и volume для сохранения сессий при перезапуске Redis.
+При отказе Redis операции с сессиями отвечают 503; подмена гостем не выполняется.
+Разные браузеры могут иметь независимые сессии одного пользователя.
+Пароли хранятся как scrypt-хеш с индивидуальной солью, проверяются через
+`compare_digest` и не возвращаются клиенту. Пробелы пароля сохраняются.
+
+Для проверки в Swagger выполните `/auth/register`, затем `/auth/login`:
+браузер сохранит HttpOnly cookie и автоматически приложит её к запросам.
+Схема `SessionCookie` видна в OpenAPI. Ввод cookie через окно Swagger Authorize
+ограничен браузером; для ручной передачи используйте Postman.
+Swagger UI загружается из `static/vendor/swagger-ui`: внешний CDN не нужен.
+Публичные GET в OpenAPI явно допускают запрос без сессии.
+Без входа закрытые методы дают 401 даже при вызове из Swagger.
+Регистрация и вход по определению доступны без сессии.
+
+В Postman возьмите UUID из заголовка `Set-Cookie` ответа login и вручную добавьте:
+
+```http
+Cookie: session_id=<UUID>
+```
+
+В задании в демонстрационном примере встречается `session-id` с дефисом;
+сервер принимает оба написания. Браузер получает `session_id` с подчёркиванием,
+как в разделе 4 задания; при наличии обоих приоритет у `session_id`.
+Коллекция содержит явный Cookie Header и автоматически сохраняет UUID после
+входа. При ручной демонстрации можно отключить cookie jar, чтобы видеть влияние
+самого заголовка.
+
+## Бизнес-правила и данные
+
+Три модели предметной области: `User`, `IsotopicSignature`, `SignatureLike`.
+Сессии хранятся отдельно в Redis. `AuthSession` сохранена только для совместимости
+с промежуточной миграцией и не участвует в авторизации.
+FK используют `ON DELETE RESTRICT`, каскадного удаления нет.
+
+| Таблица | Основные поля и ограничения |
+|---|---|
+| `users` | `id`, уникальные `username`, `email`, `password` (хеш), `full_name`, `created_at` |
+| `isotopic_signatures` | `id`, `title`, `description`, `status`, `image_file`, `video_file`, `delta_n15`, `delta_c13`, `creator_id`, `moderator_id`, `created_at`, `formed_at`, `completed_at` |
+| `signature_likes` | `id`, `user_id`, `signature_id`, `created_at`; уникальная пара пользователь–услуга |
+| `auth_sessions` | Не используется; совместимость с промежуточной версией ЛР4 |
+| `alembic_version` | Номер миграции |
+
+У пользователя максимум один черновик (частичный уникальный индекс).
+Переходы: `draft → published`, `draft → deleted`, `published → deleted`.
+Публикация, редактирование и удаление доступны только автору. Повторный PUT
+обновляет поля опубликованной записи, сохраняя автора, лайки и дату публикации.
+В каталоге собственные записи имеют кнопку «Изменить». Черновики и удалённые строки
+скрыты в публичных выборках. Soft delete сохраняет строку, медиа и лайки.
+Даты и системные поля вычисляет сервер; модератор остаётся NULL.
+Лайки идемпотентны и доступны только опубликованным услугам.
+
+Изображения: PNG/JPEG/WebP до 10 МиБ; видео: MP4 до 64 МиБ и 60 секунд.
+Проверяются MIME, сигнатуры файлов, структура MP4 и длительность `mvhd`.
+Оба файла проверяются до загрузки. Имена объектов — UUID латиницей.
+При ошибке второй загрузки/БД уже загруженные объекты удаляются;
+ошибка уборки при недоступном MinIO записывается в серверный лог.
+
+## Настройки
 
 | Переменная | По умолчанию |
 |---|---|
@@ -189,45 +166,35 @@ python main.py
 | `MINIO_ENDPOINT` | `http://localhost:9000` |
 | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | `root` / `rootpassword` |
 | `MEDIA_BUCKET` | `isoarchservice` |
+| `SESSION_TTL_SECONDS` | `86400`, положительное число секунд |
+| `SESSION_COOKIE_SECURE` | `0`; для HTTPS установить `1` |
+| `REDIS_URL` | `redis://localhost:6379/0` |
 
-Для тестов поддерживается `DATABASE_URL=sqlite:///...`: частичный уникальный
-индекс черновика есть и для SQLite. Основная БД лабораторной — PostgreSQL.
-Порт MinIO должен быть доступен браузеру, поскольку API возвращает URL медиа.
+Медиа URL MinIO должны быть доступны браузеру. Для тестов поддерживается SQLite.
+Если старый объект отсутствует в MinIO (404), SPA показывает запасные
+`static/images/default_signature.png` и `static/videos/default_signature.mp4`,
+как интерфейс ЛР3. Это не восстанавливает исходный объект: для оригинального
+медиа нужен сам файл или резервная копия MinIO. Черновик показывает фото и видео
+через `image_url`/`video_url`, возвращаемые API.
 
-## Проверки и сдача
+## Проверки
 
 ```bash
 pip install -r requirements-dev.txt
 PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -v
+node --check static/js/spa.js
 ```
 
-HTTP-тесты используют SQLite в памяти и имитируют MinIO; миграции проверяются
-на пустой БД и старой схеме с сохранением данных. Настоящие PostgreSQL/MinIO
-проверяются отдельно командой `python scripts/check_integration.py` с явными
-тестовыми настройками окружения и `LR3_INTEGRATION=1`. Эта проверка создаёт
-демонстрационную услугу и пользователя в выбранной тестовой БД.
+HTTP-тесты используют SQLite в памяти, fakeredis и имитацию MinIO: проверяют сессии,
+права двух пользователей, публичное чтение, загрузку, публикацию, лайки,
+soft delete, OpenAPI и совместимость маршрутов. Миграционные тесты проверяют
+пустую БД, обновление ЛР2/ЛР3 и сохранение данных.
 
-[Диаграмма](architecture_diagram.md), [Postman](postman_collection.json),
-[порядок сдачи](docs/lr3_submission.md), [SELECT](docs/lr3_select.sql),
-[контрольные вопросы](docs/control_questions.md), [этапы исправлений](AGENTS.md).
-Результат интеграционной проверки сохраняется в `docs/verification.json`.
-Postman-коллекция проверена Newman: 21 проверка без ошибок; краткий результат —
-`docs/postman_verification.json`. Браузерные результаты —
-`docs/browser_verification.json`, реальные снимки интерфейса — `docs/screenshots/`.
-Эти снимки не заменяют скриншоты Postman/SQL-клиента из порядка сдачи.
+Интеграционные и браузерные проверки запускаются на **отдельной тестовой БД**,
+поскольку создают пользователей и услуги. Команды и порядок демонстрации —
+в [инструкции сдачи ЛР4](docs/lr4_submission.md).
+Артефакты прежней проверки ЛР3 в `docs/verification.json`,
+`docs/browser_verification.json`, `docs/postman_verification.json` и старые
+скриншоты относятся к ЛР3; они не являются результатами проверки ЛР4.
 
-При наличии Node.js и Playwright браузерную проверку можно повторить на
-отдельном тестовом сервере:
-
-```bash
-npm install --prefix /tmp/isoarch-playwright playwright
-node /tmp/isoarch-playwright/node_modules/playwright/cli.js install chromium
-LR3_INTEGRATION=1 LR3_BASE_URL=http://127.0.0.1:58000 \
-LR3_PLAYWRIGHT_MODULE=/tmp/isoarch-playwright/node_modules/playwright \
-node scripts/browser_check.cjs
-```
-
-Для существующего Chromium можно указать `LR3_CHROME_PATH`. Среда должна
-содержать системные библиотеки, необходимые браузеру.
-
-Остановка: `Ctrl+C`, затем `docker compose down`; данные в volumes сохраняются.
+Остановка: `Ctrl+C`, затем `docker compose down`; volumes сохраняются.

@@ -3,7 +3,8 @@ from sqlalchemy import create_engine,text,inspect
 from sqlalchemy.orm import Session
 from db.migrate import upgrade_database
 from db.seed import seed_database
-from models import User, IsotopicSignature
+from models import User, IsotopicSignature, SignatureLike, AuthSession
+from services.auth import hash_password, verify_password
 
 
 class MigrationTests(unittest.TestCase):
@@ -37,4 +38,29 @@ class MigrationTests(unittest.TestCase):
             self.assertIsNone(db.get(IsotopicSignature,2).formed_at)
             db.add(User(username='new',password='hash'));db.commit()
         self.assertIn('moderator_id',[col['name'] for col in inspect(engine).get_columns('isotopic_signatures')])
+        engine.dispose()
+
+    def test_lr3_upgrade_adds_sessions_and_preserves_passwords(self):
+        from db.base import Base
+        engine = create_engine('sqlite://')
+        Base.metadata.create_all(engine, tables=[User.__table__, IsotopicSignature.__table__, SignatureLike.__table__])
+        password = hash_password('old password')
+        with Session(engine) as db:
+            db.add(User(id=1, username='lr3', password=password))
+            db.flush()
+            db.add(IsotopicSignature(id=1, creator_id=1, title='LR3 draft', status='draft'))
+            db.commit()
+        with engine.begin() as conn:
+            conn.execute(text('CREATE TABLE alembic_version (version_num VARCHAR(32) NOT NULL PRIMARY KEY)'))
+            conn.execute(text("INSERT INTO alembic_version VALUES ('0001_lr3')"))
+        upgrade_database(engine)
+        upgrade_database(engine)
+        with Session(engine) as db:
+            self.assertTrue(verify_password('old password', db.get(User,1).password))
+            self.assertEqual(db.get(User,1).password,password)
+            self.assertEqual(db.get(IsotopicSignature,1).title,'LR3 draft')
+            self.assertEqual(db.query(AuthSession).count(),0)
+        inspector = inspect(engine)
+        self.assertIn('auth_sessions',inspector.get_table_names())
+        self.assertEqual(inspector.get_foreign_keys('auth_sessions')[0]['referred_table'],'users')
         engine.dispose()

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IsoArch — Изотопные сигнатуры</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/css/spa.css">
+  <script src="/static/js/spa.js" defer></script>
+</head>
+<body>
+<div class="app-shell">
+  <header class="top-nav">
+    <a class="top-nav__logo" href="#/list">IsoArch</a>
+    <div id="account" class="account"></div>
+  </header>
+  <p id="notice" role="alert" class="api-error" hidden></p>
+  <main id="view" class="page-main" aria-live="polite"><p>Загрузка…</p></main>
+  <nav class="tabbar" aria-label="Основная навигация">
+    <a class="tab" href="#/feed">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="M9 9l6 3-6 3z"/></svg>
+      <span>Лента</span>
+    </a>
+    <a class="tab" href="#/draft">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>Добавление</span>
+    </a>
+    <a class="tab" href="#/list">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg>
+      <span>Плитка</span>
+    </a>
+  </nav>
+</div>
+<noscript>Для работы приложения включите JavaScript.</noscript>
+</body>
+</html>

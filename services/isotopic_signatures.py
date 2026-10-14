@@ -71,13 +71,14 @@ def owned_service(db, signature_id, user_id):
 
 def publish_draft(db, signature_id, user_id, data):
     draft = owned_service(db, signature_id, user_id)
-    if draft.status != "draft":
-        raise HTTPException(409, "Only drafts can be published")
+    if data.title is not None:
+        draft.title = data.title
     draft.description = data.description
     draft.delta_n15 = data.delta_n15
     draft.delta_c13 = data.delta_c13
-    draft.status = "published"
-    draft.formed_at = datetime.utcnow()
+    if draft.status == "draft":
+        draft.status = "published"
+        draft.formed_at = datetime.utcnow()
     db.commit()
     db.refresh(draft)
     return draft

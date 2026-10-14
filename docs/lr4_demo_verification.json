@@ -1,0 +1,18 @@
+{
+  "checked_at": "2026-10-14T00:53:55.404Z",
+  "result": "passed",
+  "swagger": "Login and GET /services executed through Swagger UI in a fresh isolated browser context",
+  "cookie": "Browser cookie transferred explicitly into Postman collection; cookie jar disabled",
+  "requests": {
+    "total": 10,
+    "pending": 0,
+    "failed": 0
+  },
+  "assertions": {
+    "total": 14,
+    "pending": 0,
+    "failed": 0
+  },
+  "redis": "Session user resolved from Redis to PostgreSQL username",
+  "screenshots": "Not captured; take screenshots manually in your incognito window and Postman desktop"
+}
