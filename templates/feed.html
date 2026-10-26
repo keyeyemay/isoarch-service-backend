@@ -49,8 +49,10 @@
                     </div>
 
                     {# Иконка перехода «Следующий» #}
-                    <a href="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=next_isotopic_signature_id) }}" class="btn btn--primary btn--compact" title="Следующая сигнатура">
-                        <span>Следующая</span><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                    <a href="{{ url_for('isotopic_signatures_feed', isotopic_signature_id=next_isotopic_signature_id) }}" class="feed-icon-btn" title="Следующая сигнатура" aria-label="Следующая сигнатура">
+                        <div class="feed-icon-btn__circle feed-icon-btn__circle--accent">
+                            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                        </div>
                     </a>
                 </div>
             </div>
