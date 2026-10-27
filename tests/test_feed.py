@@ -82,17 +82,19 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.client.get('/api/services', follow_redirects=False).status_code, 200)
         self.assertEqual(self.client.put('/api/services/1/publish', json={}).status_code, 404)
 
-    def test_liked_flag_is_personal_and_visible(self):
+    def test_liked_flag_is_personal_and_not_shown_in_feed(self):
         with Session(self.engine) as db:
             db.add(SignatureLike(user_id=2, signature_id=1))
             db.commit()
         data = self.client.get('/api/services/feed?id=1').json()
         self.assertEqual((data['is_liked'], data['likes_count']), (0, 1))
         page = self.client.get('/api/pages/isotopic_signatures/feed/1')
-        self.assertIn('data-liked-message aria-live="polite"></span>', page.text)
+        self.assertNotIn('Вы поставили лайк', page.text)
         self.client.post('/api/services/1/like', json={'like': 1})
         self.assertEqual(self.client.get('/api/services/feed?id=1').json()['is_liked'], 1)
-        self.assertIn('data-liked-message aria-live="polite">Вы поставили лайк</span>', self.client.get('/api/pages/isotopic_signatures/feed/1').text)
+        page = self.client.get('/api/pages/isotopic_signatures/feed/1')
+        self.assertNotIn('Вы поставили лайк', page.text)
+        self.assertNotIn('aria-pressed', page.text)
 
     def test_deleted_timestamp_excluded_at_query_level(self):
         from datetime import datetime

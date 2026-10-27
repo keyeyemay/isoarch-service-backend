@@ -45,15 +45,12 @@ const assert = require('node:assert/strict');
     await Promise.all([page.waitForURL(new RegExp('/feed/'+draft.id+'$')),page.getByRole('button',{name:'Опубликовать',exact:true}).click()]);
     await page.screenshot({path:'docs/screenshots/feed.png',fullPage:true});
     const like=page.getByRole('button',{name:'Лайк',exact:true});
-    assert.equal(await page.locator('[data-liked-message]').textContent(),'');
     await like.click();
-    await page.waitForFunction(() => document.querySelector('[data-like]').getAttribute('aria-pressed') === 'true');
+    await page.waitForFunction(() => document.querySelector('[data-like]').dataset.liked === '1');
     assert.equal(await page.locator('[data-like-count]').textContent(),'1');
-    assert.equal(await page.locator('[data-liked-message]').textContent(),'Вы поставили лайк');
     await like.click();
-    await page.waitForFunction(() => document.querySelector('[data-like]').getAttribute('aria-pressed') === 'false');
+    await page.waitForFunction(() => document.querySelector('[data-like]').dataset.liked === '0');
     assert.equal(await page.locator('[data-like-count]').textContent(),'0');
-    assert.equal(await page.locator('[data-liked-message]').textContent(),'');
     await Promise.all([page.waitForURL(/\/feed\/1$/),page.getByRole('link',{name:'Следующая'}).click()]);
 
     await page.goto(pages + '/list');
