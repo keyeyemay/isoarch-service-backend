@@ -50,12 +50,16 @@ docker compose exec redis redis-cli --scan --pattern 'isoarch:session:*'
 docker compose exec redis redis-cli GET 'isoarch:session:<хеш из предыдущей команды>'
 docker compose exec redis redis-cli TTL 'isoarch:session:<хеш из предыдущей команды>'
 docker compose exec redis redis-cli CLIENT LIST
+docker compose exec redis redis-cli EVAL "$(cat services/active_logins.lua)" 1 isoarch:usernames 'isoarch:session:*'
 ```
 
 `PING` возвращает PONG. `GET` возвращает ID пользователя, `TTL` — оставшиеся
 секунды. Токен cookie не хранится в открытом виде. Истечение TTL удаляет сессию
 автоматически. Повторный вход заменяет ключ текущего браузера атомарно через
 MULTI/EXEC. Несколько браузеров могут иметь независимые сессии.
+`EVAL` выполняет Lua-скрипт `services/active_logins.lua`: он атомарно перебирает
+сессии и возвращает пары «логин — число сессий». Логины берутся из хеша
+`isoarch:usernames`, который заполняется при входе.
 
 ## Автоматические проверки
 
@@ -117,14 +121,11 @@ LR4_INTEGRATION=1 LR4_PLAYWRIGHT_MODULE=/tmp/isoarch-lr4-browser/node_modules/pl
 При необходимости путь к браузеру задаётся `LR4_CHROME_PATH`. Базовый URL
 для скриптов — `LR4_BASE_URL`, по умолчанию `http://127.0.0.1:58000`.
 
-Postman-коллекцию можно импортировать в приложение или проверить через Newman
-на том же тестовом сервере (рабочий каталог — корень проекта):
-
-```bash
-npm install --prefix /tmp/isoarch-lr4-browser newman
-/tmp/isoarch-lr4-browser/node_modules/.bin/newman run postman_collection.json \
-  --env-var base_url=http://127.0.0.1:58000 --working-dir .
-```
+Postman-коллекции не содержат переменных: адрес `http://localhost:8000`,
+ID записи и UUID в `Cookie` записаны явно. Перед запуском вставьте UUID из
+`Set-Cookie` вместо `00000000-0000-0000-0000-000000000000` и ID своего черновика
+вместо `0` в URL; запросы выполняются по одному в Postman. Отчёт
+`lr4_postman_verification.json` получен прежней версией коллекции с переменными.
 
 Результаты полной проверки записываются в `lr4_integration_verification.json`
 и `lr4_browser_verification.json`; скриншоты — `lr4_screenshots/`.

@@ -15,7 +15,7 @@ def main():
         raise SystemExit('Explicit DATABASE_URL, MINIO_ENDPOINT and REDIS_URL are required')
     from db.session import engine
     from models import IsotopicSignature, User, SignatureLike
-    from services.auth import session_key
+    from services.auth import session_key, active_logins
     from core.redis_client import redis_client
     from core.config import SESSION_TTL_SECONDS
     base = os.environ.get('LR4_BASE_URL', 'http://127.0.0.1:58000')
@@ -45,6 +45,8 @@ def main():
         assert redis_client.get(session_key(token)) == str(owner['id'])
         assert 0 < redis_client.ttl(session_key(token)) <= SESSION_TTL_SECONDS
         results.append({'check': 'Real Redis session user and TTL', 'result': 'passed'})
+        assert (registration['username'], 1) in active_logins()
+        results.append({'check': 'Lua script lists active login', 'result': 'passed'})
         assert call('Session identity', 'GET', '/auth/me').json()['id'] == owner['id']
         assert call('Own draft absent', 'GET', '/services/draft').json() is None
         draft = call('Upload actual binary PNG/MP4', 'POST', '/services', 201, data={'title': 'LR4 integration'}, files={
@@ -99,6 +101,7 @@ def main():
         assert db.query(SignatureLike).filter_by(signature_id=id, user_id=owner['id']).count() == 1
         assert db.get(User, owner['id']).password.startswith('scrypt$')
         assert redis_client.get(session_key(token)) is None
+        assert registration['username'] not in [login for login, _ in active_logins()]
         results.append({'check': 'PostgreSQL soft delete, preserved like, password hash; Redis session revoked', 'result': 'passed'})
     report = {'checked_at': datetime.now(timezone.utc).isoformat(), 'database': engine.dialect.name,
               'media': 'real MinIO', 'sessions': 'real Redis', 'result': 'passed', 'checks': results}

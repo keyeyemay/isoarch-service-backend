@@ -34,7 +34,7 @@ def login_user(data: UserLogin, request: Request, response: Response, db: Sessio
     user = db.query(User).filter_by(username=data.username).first()
     if not verify_password(data.password, user.password if user else "") or user is None:
         raise HTTPException(401, "Invalid username or password")
-    token = create_session(user.id, get_session_token(request))
+    token = create_session(user.id, user.username, get_session_token(request))
     response.delete_cookie(key="session-id", path="/")
     response.set_cookie(key="session_id", value=token, max_age=SESSION_TTL_SECONDS,
                         httponly=True, secure=SESSION_COOKIE_SECURE, samesite="lax", path="/")

@@ -1,45 +1,19 @@
 {
   "info": {
     "name": "IsoArch LR4 — cookie sessions",
-    "description": "Последовательный сценарий на тестовой БД. В Settings коллекции отключён cookie jar: после login UUID сохраняется в session_id и явно передаётся через Headers Cookie: session_id={{session_id}}. Для ручного показа скопируйте UUID из Set-Cookie. Working directory: корень репозитория.",
+    "description": "Сценарий для тестовой БД, все значения указаны явно, без переменных. Cookie jar и вкладка Authorization отключены: сессия передаётся только строкой Headers Cookie: session_id=<UUID>. После запроса 4 скопируйте UUID из Set-Cookie и вставьте его вместо 00000000-0000-0000-0000-000000000000 во всех запросах с Cookie. После запроса 7 замените 0 в URL на ID созданного черновика. Логин lr4_postman_student можно зарегистрировать один раз; при 409 выполните сразу вход. Working directory: корень репозитория.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "protocolProfileBehavior": {
     "disableCookies": true
   },
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "http://localhost:8000"
-    },
-    {
-      "key": "session_id",
-      "value": ""
-    },
-    {
-      "key": "user_id",
-      "value": ""
-    },
-    {
-      "key": "service_id",
-      "value": ""
-    },
-    {
-      "key": "feed_id",
-      "value": ""
-    },
-    {
-      "key": "registration_suffix",
-      "value": ""
-    }
-  ],
   "item": [
     {
       "name": "1. Публичный список без сессии",
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{base_url}}/services?c13_max=-15"
+        "url": "http://localhost:8000/services?c13_max=-15"
       },
       "event": [
         {
@@ -60,7 +34,7 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{base_url}}/services/draft"
+        "url": "http://localhost:8000/services/draft"
       },
       "event": [
         {
@@ -85,10 +59,10 @@
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/auth/register",
+        "url": "http://localhost:8000/auth/register",
         "body": {
           "mode": "raw",
-          "raw": "{\"username\": \"lr4_{{registration_suffix}}\", \"password\": \"StudyPassword123\", \"full_name\": \"Исследователь ЛР4\", \"email\": \"lr4_{{registration_suffix}}@example.org\"}",
+          "raw": "{\"username\": \"lr4_postman_student\", \"password\": \"StudyPassword123\", \"full_name\": \"Исследователь ЛР4\", \"email\": \"lr4_postman_student@example.org\"}",
           "options": {
             "raw": {
               "language": "json"
@@ -98,22 +72,12 @@
       },
       "event": [
         {
-          "listen": "prerequest",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.collectionVariables.set(\"registration_suffix\", pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\"));"
-            ]
-          }
-        },
-        {
           "listen": "test",
           "script": {
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "pm.test(\"Password hidden\", () => pm.expect(pm.response.json()).not.to.have.property(\"password\"));",
-              "pm.collectionVariables.set(\"user_id\", pm.response.json().id);"
+              "pm.test(\"Password hidden\", () => pm.expect(pm.response.json()).not.to.have.property(\"password\"));"
             ]
           }
         }
@@ -130,10 +94,10 @@
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/auth/login",
+        "url": "http://localhost:8000/auth/login",
         "body": {
           "mode": "raw",
-          "raw": "{\"username\": \"lr4_{{registration_suffix}}\", \"password\": \"StudyPassword123\"}",
+          "raw": "{\"username\": \"lr4_postman_student\", \"password\": \"StudyPassword123\"}",
           "options": {
             "raw": {
               "language": "json"
@@ -150,8 +114,7 @@
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
               "const cookie = pm.response.headers.get(\"Set-Cookie\");",
               "const match = cookie && cookie.match(/session_id=([^;]+)/);",
-              "pm.test(\"Session cookie and HttpOnly\", () => { pm.expect(match).not.to.eql(null); pm.expect(cookie).to.include(\"HttpOnly\"); });",
-              "if (match) pm.collectionVariables.set(\"session_id\", match[1]);"
+              "pm.test(\"Session cookie and HttpOnly\", () => { pm.expect(match).not.to.eql(null); pm.expect(cookie).to.include(\"HttpOnly\"); });"
             ]
           }
         }
@@ -165,10 +128,12 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           }
         ],
-        "url": "{{base_url}}/auth/me"
+        "url": "http://localhost:8000/auth/me",
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
       },
       "event": [
         {
@@ -177,7 +142,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Session identity\", () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get(\"user_id\"))));"
+              "pm.test(\"Session identity\", () => pm.expect(pm.response.json().username).to.eql(\"lr4_postman_student\"));"
             ]
           }
         }
@@ -191,10 +156,12 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           }
         ],
-        "url": "{{base_url}}/services/draft"
+        "url": "http://localhost:8000/services/draft",
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
       },
       "event": [
         {
@@ -217,10 +184,11 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           }
         ],
-        "url": "{{base_url}}/services",
+        "url": "http://localhost:8000/services",
         "body": {
           "mode": "formdata",
           "formdata": [
@@ -240,7 +208,8 @@
               "src": "static/videos/default_signature.mp4"
             }
           ]
-        }
+        },
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
       },
       "event": [
         {
@@ -249,7 +218,6 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-              "pm.collectionVariables.set(\"service_id\", pm.response.json().id);",
               "pm.test(\"Object names\", () => pm.expect(pm.response.json().image_file).to.match(/^[a-f0-9]{32}\\.png$/));"
             ]
           }
@@ -264,10 +232,12 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           }
         ],
-        "url": "{{base_url}}/services/draft"
+        "url": "http://localhost:8000/services/draft",
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
       },
       "event": [
         {
@@ -276,7 +246,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Own draft\", () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get(\"service_id\"))));"
+              "pm.test(\"Own draft\", () => { const s=pm.response.json(); pm.expect(s.status).to.eql(\"draft\"); pm.expect(s.is_creator).to.eql(1); });"
             ]
           }
         }
@@ -290,14 +260,15 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           },
           {
             "key": "Content-Type",
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/services/{{service_id}}",
+        "url": "http://localhost:8000/services/0",
         "body": {
           "mode": "raw",
           "raw": "{\"description\": \"Изотопный анализ: смешанный рацион\", \"delta_n15\": 9.4, \"delta_c13\": -18.2}",
@@ -306,7 +277,8 @@
               "language": "json"
             }
           }
-        }
+        },
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек). В URL замените 0 на ID своего черновика/записи из ответа создания или GET /services/draft."
       },
       "event": [
         {
@@ -315,8 +287,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Author from session\", () => { const s=pm.response.json(); pm.expect(s.is_creator).to.eql(1); pm.expect(String(s.creator_id)).to.eql(String(pm.collectionVariables.get(\"user_id\"))); pm.expect(s.status).to.eql(\"published\"); });",
-              "pm.collectionVariables.set(\"formed_at\", pm.response.json().formed_at);"
+              "pm.test(\"Author from session\", () => { const s=pm.response.json(); pm.expect(s.is_creator).to.eql(1); pm.expect(s.status).to.eql(\"published\"); pm.expect(s.formed_at).to.be.a(\"string\"); });"
             ]
           }
         }
@@ -330,14 +301,15 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           },
           {
             "key": "Content-Type",
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/services/{{service_id}}",
+        "url": "http://localhost:8000/services/0",
         "body": {
           "mode": "raw",
           "raw": "{\"title\": \"Обновлённое исследование\", \"description\": \"Уточнённый рацион\", \"delta_n15\": 10.5, \"delta_c13\": -19}",
@@ -346,7 +318,8 @@
               "language": "json"
             }
           }
-        }
+        },
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек). В URL замените 0 на ID своего черновика/записи из ответа создания или GET /services/draft."
       },
       "event": [
         {
@@ -355,7 +328,7 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"Updated publication\", () => { const s=pm.response.json(); pm.expect(s.title).to.eql(\"Обновлённое исследование\"); pm.expect(s.description).to.eql(\"Уточнённый рацион\"); pm.expect(s.formed_at).to.eql(pm.collectionVariables.get(\"formed_at\")); pm.expect(s.status).to.eql(\"published\"); });"
+              "pm.test(\"Updated publication\", () => { const s=pm.response.json(); pm.expect(s.title).to.eql(\"Обновлённое исследование\"); pm.expect(s.description).to.eql(\"Уточнённый рацион\"); pm.expect(s.formed_at).to.be.a(\"string\"); pm.expect(s.status).to.eql(\"published\"); });"
             ]
           }
         }
@@ -367,7 +340,7 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{base_url}}/services/feed"
+        "url": "http://localhost:8000/services/feed"
       },
       "event": [
         {
@@ -375,8 +348,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-              "pm.collectionVariables.set(\"feed_id\", pm.response.json().id);"
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
             ]
           }
         }
@@ -388,7 +360,8 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{base_url}}/services/feed/{{feed_id}}?next=true"
+        "url": "http://localhost:8000/services/feed/0?next=true",
+        "description": "В URL замените 0 на ID своего черновика/записи из ответа создания или GET /services/draft."
       },
       "event": [
         {
@@ -410,14 +383,15 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           },
           {
             "key": "Content-Type",
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/services/{{service_id}}/like",
+        "url": "http://localhost:8000/services/0/like",
         "body": {
           "mode": "raw",
           "raw": "{\"like\": 1}",
@@ -426,7 +400,8 @@
               "language": "json"
             }
           }
-        }
+        },
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек). В URL замените 0 на ID своего черновика/записи из ответа создания или GET /services/draft."
       },
       "event": [
         {
@@ -449,14 +424,15 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           },
           {
             "key": "Content-Type",
             "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/services/{{service_id}}/like",
+        "url": "http://localhost:8000/services/0/like",
         "body": {
           "mode": "raw",
           "raw": "{\"like\": 0}",
@@ -465,7 +441,8 @@
               "language": "json"
             }
           }
-        }
+        },
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек). В URL замените 0 на ID своего черновика/записи из ответа создания или GET /services/draft."
       },
       "event": [
         {
@@ -488,10 +465,12 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           }
         ],
-        "url": "{{base_url}}/services/{{service_id}}"
+        "url": "http://localhost:8000/services/0",
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек). В URL замените 0 на ID своего черновика/записи из ответа создания или GET /services/draft."
       },
       "event": [
         {
@@ -512,7 +491,8 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{base_url}}/services/feed/{{service_id}}"
+        "url": "http://localhost:8000/services/feed/0",
+        "description": "В URL замените 0 на ID своего черновика/записи из ответа создания или GET /services/draft."
       },
       "event": [
         {
@@ -534,10 +514,12 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           }
         ],
-        "url": "{{base_url}}/auth/logout"
+        "url": "http://localhost:8000/auth/logout",
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
       },
       "event": [
         {
@@ -560,10 +542,12 @@
         "header": [
           {
             "key": "Cookie",
-            "value": "session_id={{session_id}}"
+            "value": "session_id=00000000-0000-0000-0000-000000000000",
+            "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
           }
         ],
-        "url": "{{base_url}}/services/draft"
+        "url": "http://localhost:8000/services/draft",
+        "description": "Замените нули на UUID из Set-Cookie ответа входа (без session_id=, атрибутов и кавычек)."
       },
       "event": [
         {
@@ -578,5 +562,8 @@
       ],
       "response": []
     }
-  ]
+  ],
+  "auth": {
+    "type": "noauth"
+  }
 }

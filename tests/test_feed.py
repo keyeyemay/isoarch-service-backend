@@ -11,7 +11,8 @@ from db.base import Base
 from db.session import get_db
 from models import IsotopicSignature, User, SignatureLike
 from services.media import mp4_duration
-from services.auth import hash_password, session_key
+from fastapi import HTTPException
+from services.auth import hash_password, session_key, active_logins, USERNAMES_KEY
 from fakeredis import FakeRedis
 from redis.exceptions import ConnectionError as RedisConnectionError
 from core.config import SESSION_TTL_SECONDS
@@ -249,6 +250,25 @@ class ApiTests(unittest.TestCase):
             self.client.cookies.set('session_id',bad)
             self.assertEqual(self.client.get('/auth/me').status_code,401)
             self.assertEqual(self.client.get('/services').status_code,200)
+
+    def test_active_logins_lua_script(self):
+        self.assertEqual(self.redis.hget(USERNAMES_KEY, '1'), 'current')
+        second = TestClient(app)
+        self.assertEqual(second.post('/auth/login', json={'username':'other','password':'p'}).status_code, 200)
+        third = TestClient(app)
+        self.assertEqual(third.post('/auth/login', json={'username':'other','password':'p'}).status_code, 200)
+        self.assertEqual(active_logins(), [('current', 1), ('other', 2)])
+        # Session created before usernames were stored: the script falls back to the ID.
+        self.redis.set(session_key('legacy'), '7', ex=60)
+        self.assertIn(('user_id=7', 1), active_logins())
+        self.assertEqual(self.client.post('/auth/logout').status_code, 204)
+        second.post('/auth/logout')
+        self.assertEqual(active_logins(), [('other', 1), ('user_id=7', 1)])
+        second.close(); third.close()
+        with patch('services.auth.redis_client.eval', side_effect=RedisConnectionError):
+            with self.assertRaises(HTTPException) as error:
+                active_logins()
+        self.assertEqual(error.exception.status_code, 503)
 
     def test_redis_failure_does_not_grant_access_or_fake_logout(self):
         token = self.client.cookies.get('session_id')

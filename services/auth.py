@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import secrets
 import uuid
+from pathlib import Path
 from fastapi import HTTPException
 from redis.exceptions import RedisError
 from core.redis_client import redis_client
@@ -33,8 +34,14 @@ def token_digest(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
+SESSION_PREFIX = "isoarch:session:"
+# Lua cannot query PostgreSQL, so login stores user_id → username for the active-logins script.
+USERNAMES_KEY = "isoarch:usernames"
+ACTIVE_LOGINS_LUA = Path(__file__).with_name("active_logins.lua").read_text(encoding="utf-8")
+
+
 def session_key(token: str) -> str:
-    return "isoarch:session:" + token_digest(token)
+    return SESSION_PREFIX + token_digest(token)
 
 
 def revoke_session(token: str | None):
@@ -55,7 +62,7 @@ def session_user_id(token: str | None) -> int | None:
     return int(value) if value is not None else None
 
 
-def create_session(user_id: int, previous_token: str | None = None) -> str:
+def create_session(user_id: int, username: str, previous_token: str | None = None) -> str:
     token = str(uuid.uuid4())
     try:
         # Redis MULTI/EXEC rotates the old token and creates the new TTL atomically.
@@ -63,7 +70,17 @@ def create_session(user_id: int, previous_token: str | None = None) -> str:
             if previous_token:
                 transaction.delete(session_key(previous_token))
             transaction.set(session_key(token), str(user_id), ex=SESSION_TTL_SECONDS)
+            transaction.hset(USERNAMES_KEY, str(user_id), username)
             transaction.execute()
     except RedisError as exc:
         raise HTTPException(503, "Session storage is unavailable") from exc
     return token
+
+
+def active_logins() -> list[tuple[str, int]]:
+    """Run the Lua script: logins with active sessions and the number of sessions."""
+    try:
+        reply = redis_client.eval(ACTIVE_LOGINS_LUA, 1, USERNAMES_KEY, SESSION_PREFIX + "*")
+    except RedisError as exc:
+        raise HTTPException(503, "Session storage is unavailable") from exc
+    return [(login, int(count)) for login, count in reply]

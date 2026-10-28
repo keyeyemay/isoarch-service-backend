@@ -77,14 +77,17 @@ API и StarUML; при необходимости сохраните допол�
    [`postman_demo_collection.json`](../postman_demo_collection.json).
    Это отдельная коллекция для ручного переноса cookie; исходную коллекцию
    с автоматическим login для этого показа запускать не нужно.
-2. В переменных импортированной коллекции задайте:
+2. Переменных в коллекции нет: адрес, ID и cookie записаны явным текстом,
+   поэтому во всех запросах значения в URL и Headers белые. Перед показом
+   замените заглушки вручную:
 
-   | Переменная | Значение |
-   |---|---|
-   | `base_url` | `http://localhost:8000` |
-   | `session_id` | UUID, скопированный из Application; без `session_id=`, кавычек и пробелов |
-   | `service_id` | Заполнится автоматически после создания/получения черновика |
-   | `user_id` | Заполнится после запроса «Подготовка A» |
+   | Где | Заглушка | Значение |
+   |---|---|---|
+   | Headers → `Cookie` всех запросов с cookie | `session_id=00000000-0000-0000-0000-000000000000` | UUID из Application, без кавычек и пробелов; `session_id=` оставить |
+   | URL запросов 6–8 и «Проверить сохранённую публикацию» | `/services/0` | ID черновика из ответа «Подготовка B» или «Подготовка C» |
+
+   Серыми останутся только служебные hidden headers, которые Postman
+   добавляет сам (`Host`, `User-Agent`, `Postman-Token`, `Content-Type` с boundary).
 
 3. Запросы уже используют **No Auth** и отключённый cookie jar. Проверьте у
    каждого запроса **Settings → Disable cookie jar = ON**. Иначе Postman может
@@ -96,20 +99,19 @@ API и StarUML; при необходимости сохраните допол�
 5. В **Headers** авторизованных запросов уже есть строка:
 
    ```http
-   Cookie: session_id={{session_id}}
+   Cookie: session_id=<UUID>
    ```
 
    Галочка слева от строки должна быть включена. Это включает отправку заголовка.
-   Для наглядного снимка можно заменить `{{session_id}}` непосредственно на UUID.
    Не вставляйте `HttpOnly`, `Path`, `SameSite` или весь заголовок Set-Cookie.
 6. Выполните **«Подготовка B. Создать собственный черновик»**:
    **Body → form-data**: `title` — Text, `image` и `video` — **File**.
    Если Postman не нашёл относительные пути, выберите вручную файлы проекта:
    `static/images/default_signature.png` и `static/videos/default_signature.mp4`.
    Content-Type для multipart вручную не задавайте: Postman добавит boundary.
-   Ожидается **201**. Скрипт сохранит `id` в `service_id`.
+   Ожидается **201**. Запомните `id` из ответа и подставьте его вместо `0` в URL запросов 6–8.
 7. Если получен **409 Draft already exists**, выполните запрос **«Подготовка C»**:
-   он получает свой черновик и сохраняет его ID. Если ответ `null`, создайте
+   он возвращает свой черновик; возьмите его `id`. Если ответ `null`, создайте
    черновик запросом «Подготовка B». Не берите произвольный ID из публичного списка:
    для успешного PUT запись должна принадлежать текущему пользователю.
 
@@ -132,7 +134,7 @@ API и StarUML; при необходимости сохраните допол�
 Выполните **«6. PUT гостя — отказ 401»**:
 
 ```http
-PUT http://localhost:8000/services/{{service_id}}
+PUT http://localhost:8000/services/<ID черновика>
 Content-Type: application/json
 ```
 
@@ -155,7 +157,7 @@ Cookie отсутствует, cookie jar выключен. Тело **Body → 
 ## 6. Автор успешно публикует и обновляет — скриншоты 7–8
 
 Выполните **«7. PUT автора — публикация 200»** с тем же ID и телом.
-В Headers включён `Cookie: session_id={{session_id}}`.
+В Headers включён `Cookie: session_id=<UUID>` с UUID, вставленным вручную.
 
 Ожидается **200 OK**. В ответе видны обновлённые поля, `status: "published"`,
 `is_creator: 1`, `creator_id`, совпадающий с пользователем, и `formed_at`.
@@ -202,6 +204,17 @@ docker compose exec redis redis-cli TTL 'isoarch:session:HASH'
 ```bash
 docker compose exec postgres psql -U isoarch_user -d isoarch_db -c "SELECT id, username, full_name FROM users WHERE id = 7;"
 ```
+
+Список логинов всех активных сессий выводит Lua-скрипт, выполняемый внутри Redis:
+
+```bash
+docker compose exec redis redis-cli EVAL "$(cat services/active_logins.lua)" 1 isoarch:usernames 'isoarch:session:*'
+```
+
+Ответ — пары «логин, число сессий». Скрипт перебирает ключи `isoarch:session:*`
+командой SCAN, читает `user_id` и берёт логин из хеша `isoarch:usernames`,
+который сервер заполняет при входе: Lua не имеет доступа к PostgreSQL.
+Сессии, созданные до этой доработки, показываются как `user_id=<ID>`.
 
 Снимок терминала должен показывать: ключ, ID пользователя, положительный TTL
 и тот же username, что на скриншоте 1. `GET = nil` или `TTL = -2` означает, что
