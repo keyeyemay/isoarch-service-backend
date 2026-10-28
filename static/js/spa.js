@@ -97,7 +97,7 @@ async function feed(id) {
         <div class="feed__param-chip"><span class="feed__param-name">δ¹³C</span><span class="feed__param-val">${isotope(s.delta_c13)}</span></div>
         <div class="feed__param-chip"><span class="feed__param-name">δ¹⁵N</span><span class="feed__param-val">${isotope(s.delta_n15)}</span></div>
         <button type="button" class="feed-icon-btn__circle" data-like="${s.id}" data-liked="${s.is_liked}" aria-pressed="${Boolean(s.is_liked)}" aria-label="${user ? "Нравится" : "Войти, чтобы поставить лайк"}">♥</button><span class="like-action__count" data-like-count>${s.likes_count}</span>
-        <button type="button" class="btn btn--primary" data-next="${s.id}">Далее →</button>
+        <button type="button" class="feed-icon-btn__circle feed-icon-btn__circle--accent" data-next="${s.id}" title="Следующая сигнатура" aria-label="Следующая сигнатура"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>
       </div></div></div>`;
 }
 async function draftPage() {
