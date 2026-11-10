@@ -13,8 +13,8 @@ from db.session import get_db
 from models import IsotopicSignature, User, SignatureLike
 from services.media import mp4_duration
 
-IMAGE = Path('static/images/default_signature.png').read_bytes()
-VIDEO = Path('static/videos/default_signature.mp4').read_bytes()
+IMAGE = Path('media/default_signature.png').read_bytes()
+VIDEO = Path('media/default_signature.mp4').read_bytes()
 
 
 class ApiTests(unittest.TestCase):
@@ -82,19 +82,14 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.client.get('/api/services', follow_redirects=False).status_code, 200)
         self.assertEqual(self.client.put('/api/services/1/publish', json={}).status_code, 404)
 
-    def test_liked_flag_is_personal_and_not_shown_in_feed(self):
+    def test_liked_flag_is_personal(self):
         with Session(self.engine) as db:
             db.add(SignatureLike(user_id=2, signature_id=1))
             db.commit()
         data = self.client.get('/api/services/feed?id=1').json()
         self.assertEqual((data['is_liked'], data['likes_count']), (0, 1))
-        page = self.client.get('/api/pages/isotopic_signatures/feed/1')
-        self.assertNotIn('Вы поставили лайк', page.text)
         self.client.post('/api/services/1/like', json={'like': 1})
         self.assertEqual(self.client.get('/api/services/feed?id=1').json()['is_liked'], 1)
-        page = self.client.get('/api/pages/isotopic_signatures/feed/1')
-        self.assertNotIn('Вы поставили лайк', page.text)
-        self.assertNotIn('aria-pressed', page.text)
 
     def test_deleted_timestamp_excluded_at_query_level(self):
         from datetime import datetime
@@ -228,29 +223,15 @@ class ApiTests(unittest.TestCase):
             db.delete(db.get(User,1))
             with self.assertRaises(IntegrityError):db.commit()
 
-    def test_four_pages_and_api_actions(self):
-        catalog=self.client.get('/api/pages/isotopic_signatures/list')
-        self.assertEqual(catalog.status_code,200)
-        self.assertIn('data-delete="1"',catalog.text);self.assertNotIn('data-delete="2"',catalog.text)
-        draft=self.client.get('/api/pages/isotopic_signatures/draft')
-        self.assertEqual(draft.status_code,200)
-        self.assertIn('name="image"',draft.text);self.assertIn('name="video"',draft.text)
-        id=self.create().json()['id']
-        draft=self.client.get('/api/pages/isotopic_signatures/draft')
-        self.assertIn(f'/api/services/{id}',draft.text)
-        feed=self.client.get('/api/pages/isotopic_signatures/feed/1')
-        self.assertEqual(feed.status_code,200);self.assertIn('data-like="1"',feed.text)
-        next_page=self.client.get('/api/pages/isotopic_signatures/feed/1?next=true')
-        self.assertIn('PRIVATE_TITLE_2',next_page.text)
-        for path in ['/api/pages/isotopic_signatures/feed/4','/api/pages/isotopic_signatures/unavailable']:
-            unavailable=self.client.get(path);self.assertEqual(unavailable.status_code,404)
-            self.assertNotIn('PRIVATE_TITLE_4',unavailable.text)
+    def test_no_html_interface(self):
+        for path in ['/api/pages/isotopic_signatures/list','/api/pages/isotopic_signatures/feed/1',
+                     '/api/pages/isotopic_signatures/draft','/static/css/styles.css']:
+            self.assertEqual(self.client.get(path).status_code,404,path)
 
     def test_all_routes_api_and_legacy_writes_removed(self):
         for route in app.routes:
             if hasattr(route,'methods'):self.assertTrue(route.path.startswith('/api'),route.path)
         self.assertEqual(self.client.post('/isotopic_signatures/2/delete').status_code,404)
-        self.assertEqual(self.client.post('/api/pages/isotopic_signatures/draft').status_code,405)
 
 
 if __name__ == '__main__':unittest.main()

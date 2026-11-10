@@ -19,8 +19,8 @@ def main():
     from db.migrate import upgrade_database
     from models import IsotopicSignature, User, SignatureLike
     base=os.environ.get('LR3_BASE_URL','http://127.0.0.1:58000')
-    image=Path('static/images/default_signature.png').read_bytes()
-    video=Path('static/videos/default_signature.mp4').read_bytes()
+    image=Path('media/default_signature.png').read_bytes()
+    video=Path('media/default_signature.mp4').read_bytes()
     results=[]
     with httpx.Client(base_url=base, timeout=20, trust_env=False) as client:
         def call(name,method,path,expected=200,**kwargs):
@@ -60,10 +60,7 @@ def main():
         call('Login stub','POST','/api/users/login')
         call('Logout stub','POST','/api/users/logout')
         for page in ['list','feed/1','draft','unavailable']:
-            response=call('HTML '+page,'GET','/api/pages/isotopic_signatures/'+page,404 if page=='unavailable' else 200)
-            assert '<html' in response.text
-        hidden=call('HTML never exposes deleted data','GET',f'/api/pages/isotopic_signatures/feed/{id}',404)
-        assert 'LR3 integration' not in hidden.text
+            call('No HTML page '+page,'GET','/api/pages/isotopic_signatures/'+page,404)
     with Session(engine) as db:
         record=db.get(IsotopicSignature,id)
         assert record.status=='deleted' and record.deleted_at==record.completed_at and record.completed_at and record.image_file==draft['image_file']

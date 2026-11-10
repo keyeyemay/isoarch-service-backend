@@ -4,9 +4,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 
-from api.handlers import router
 from api.users_api import router as users_api_router
 from api.services_api import router as services_api_router
 from db.seed import seed_database, seed_media
@@ -37,8 +35,6 @@ async def validation_error(request, exc):
         for error in exc.errors()
     ]})
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-app.include_router(router)
 app.include_router(users_api_router)
 app.include_router(services_api_router)
 

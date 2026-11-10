@@ -1,13 +1,13 @@
 from sqlalchemy import select, exists
 from sqlalchemy.orm import object_session
 from models import SignatureLike
-from core.config import MINIO_ENDPOINT, MEDIA_BUCKET, DEFAULT_IMAGE_URL, DEFAULT_VIDEO_URL
+from core.config import MINIO_ENDPOINT, MEDIA_BUCKET, DEFAULT_IMAGE_FILE, DEFAULT_VIDEO_FILE
 from urllib.parse import quote
 
 
 def build_media_url(key, default_type="image"):
     if not key:
-        return DEFAULT_VIDEO_URL if default_type == "video" else DEFAULT_IMAGE_URL
+        key = DEFAULT_VIDEO_FILE if default_type == "video" else DEFAULT_IMAGE_FILE
     base = MINIO_ENDPOINT.rstrip("/")
     if "://" not in base:
         base = "http://" + base
@@ -24,6 +24,4 @@ def isotopic_signature_display(signature, user_id):
                   is_liked=int(object_session(signature).scalar(select(exists().where(
                       SignatureLike.signature_id == signature.id, SignatureLike.user_id == user_id)))),
                   likes_count=len(signature.likes))
-    for field in ("delta_n15", "delta_c13"):
-        result[field + "_display"] = f"{result[field]:.1f} ‰" if result[field] is not None else "—"
     return result

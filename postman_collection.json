@@ -61,12 +61,12 @@
             {
               "key": "image",
               "type": "file",
-              "src": "static/images/default_signature.png"
+              "src": "media/default_signature.png"
             },
             {
               "key": "video",
               "type": "file",
-              "src": "static/videos/default_signature.mp4"
+              "src": "media/default_signature.mp4"
             }
           ]
         }

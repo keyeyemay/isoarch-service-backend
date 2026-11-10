@@ -7,7 +7,8 @@
 
 ## REST API
 
-Контракт: ровно 10 операций из [Lab_3_updated.md](Lab_3_updated.md).
+Сервис предоставляет только JSON API (без HTML-интерфейса) для будущего SPA.
+Контракт: ровно 10 операций.
 Идентификатор ленты передаётся query-параметром `id`, поэтому оба сценария
 показа используют один метод. Отдельного `/feed/{id}` в JSON API нет.
 
@@ -97,8 +98,9 @@
 Ответ публикации содержит поля услуги, `is_creator` и `is_liked` (0/1),
 `likes_count`, `image_url`, `video_url`, `deleted_at` (для публикации NULL).
 `is_liked` вычисляется SQL-подзапросом EXISTS к таблице лайков с ID текущего
-пользователя. В интерфейсе ленты признак лайка не отображается — показывается только
-число лайков; `is_liked` нужен клиенту, чтобы отправить `{"like": 0}` или `{"like": 1}`. Ответ черновика содержит ID, название,
+пользователя; по нему клиент решает, отправить `{"like": 0}` или `{"like": 1}`.
+Если файл не загружен, `image_url`/`video_url` указывают на демонстрационные
+файлы в MinIO. Ответ черновика содержит ID, название,
 описание, изотопные значения и имена файлов. Системные поля доступны только
 для чтения в ответе публикации.
 
@@ -121,7 +123,7 @@
 
 ---
 
-[Диаграмма классов](architecture_diagram.md) · [Коллекция Postman](postman_collection.json) · [Порядок сдачи](docs/lr3_submission.md) · [Соответствие ЛР3](docs/compliance.md)
+[Коллекция Postman](postman_collection.json)
 
 ## Бизнес-правила
 
@@ -135,7 +137,7 @@ FastAPI переиспользует результат в пределах за
 Публикация и удаление доступны только создателю. Возврата в черновик нет.
 Удаление сохраняет строку и файлы: статус `deleted` и дата `deleted_at` задают soft delete.
 SQL-запросы исключают удалённые записи до формирования ответа. Удалённые и чужие
-черновики не выдаются в списке/ленте; даже страница ошибки не раскрывает их поля.
+черновики не выдаются в списке/ленте; ответ 404 не раскрывает их поля.
 
 `id`, `status`, `creator_id`, `moderator_id`, `created_at`, `formed_at`,
 `completed_at`, `deleted_at` нельзя передать для изменения. Дополнительные входные поля
@@ -146,19 +148,10 @@ SQL-запросы исключают удалённые записи до фо�
 Лайки доступны только опубликованным услугам. Повторная установка/отмена
 идемпотентна; уникальная пара пользователь–услуга исключает дубли.
 
-## Страницы приложения
+## Служебные маршруты
 
-| URL | Шаблон | Используемые сценарии |
-|---|---|---|
-| `/api/pages/isotopic_signatures/list` | `tiles.html` | Общая ORM-выборка списка; JS вызывает DELETE API только для своих услуг |
-| `/api/pages/isotopic_signatures/feed/{id}` | `feed.html` | Общая выборка ленты; JS вызывает GET следующей записи и POST like |
-| `/api/pages/isotopic_signatures/draft` | `add.html` | Общая выборка собственного черновика; POST с файлами, PUT публикации, DELETE черновика |
-| `/api/pages/isotopic_signatures/unavailable` | `deleted.html` | Нейтральная страница 404 без полей записи; общая выборка для навигации |
-
-Шаблоны первоначально формируются сервером; сценарии изменения данных используют
-те же JSON API, что и будущая SPA. Старых POST-обработчиков HTML больше нет.
-Служебные GET: `/api/docs`, `/api/docs/oauth2-redirect`, `/api/redoc`,
-`/api/openapi.json`; `/static/{path}` обслуживает CSS/JS и локальные запасные медиа.
+Документация API: `/api/docs` (Swagger), `/api/docs/oauth2-redirect`,
+`/api/redoc`, `/api/openapi.json`. Других маршрутов, кроме JSON API, нет.
 
 ## Запуск
 
@@ -174,7 +167,7 @@ python main.py
 
 При запуске Alembic создаёт новую схему или обновляет старую схему ЛР2
 без удаления записей, затем настраивается MinIO и добавляются демонстрационные
-данные в пустую БД. В MinIO помещаются настоящие демонстрационные фото/видео.
+данные в пустую БД. В MinIO загружаются демонстрационные фото/видео из `media/`.
 Если БД или MinIO недоступны, запуск завершается с ошибкой, а не имитирует успех.
 Перед обновлением собственной БД рекомендуется сохранить её резервную копию.
 Обратная миграция с удалением новых полей не предусмотрена.
@@ -187,10 +180,6 @@ python main.py
 DATABASE_URL=postgresql://isoarch_user:isoarch_password@localhost:5432/isoarch_lr3_db .venv/bin/python main.py
 ```
 
-- Каталог: http://localhost:8000/api/pages/isotopic_signatures/list
-- Лента: http://localhost:8000/api/pages/isotopic_signatures/feed/1
-- Создание/публикация: http://localhost:8000/api/pages/isotopic_signatures/draft
-- Недоступная запись: http://localhost:8000/api/pages/isotopic_signatures/unavailable
 - Swagger: http://localhost:8000/api/docs
 - Adminer: http://localhost:8080 — PostgreSQL, сервер `postgres`,
   БД `isoarch_db`, пользователь `isoarch_user`, пароль `isoarch_password`.
@@ -212,9 +201,6 @@ DATABASE_URL=postgresql://isoarch_user:isoarch_password@localhost:5432/isoarch_l
 
 ## Проверки и сдача
 
-[Актуальные результаты и команды](docs/verification_commands.md) ·
-[Полная сверка с заданием](docs/compliance.md)
-
 ```bash
 pip install -r requirements-dev.txt
 PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -v
@@ -226,30 +212,9 @@ HTTP-тесты используют SQLite в памяти и имитирую�
 тестовыми настройками окружения и `LR3_INTEGRATION=1`. Эта проверка создаёт
 демонстрационную услугу и пользователя в выбранной тестовой БД.
 
-[Диаграмма](architecture_diagram.md), [Postman](postman_collection.json),
-[порядок сдачи](docs/lr3_submission.md), [SELECT](docs/lr3_select.sql),
-[контрольные вопросы](docs/control_questions.md), [этапы исправлений](AGENTS.md).
-Результат интеграционной проверки сохраняется в `docs/verification.json`.
-Postman-коллекция содержит все 10 операций отдельными запросами, включая
-login и logout. Tests дополнительно проверяет следующую запись ленты,
-признак лайка и недоступность удалённой записи. Результат Newman —
-`docs/postman_verification.json`. Браузерные результаты —
-`docs/browser_verification.json`, реальные снимки интерфейса — `docs/screenshots/`.
-Эти снимки не заменяют скриншоты Postman/SQL-клиента из порядка сдачи.
-После обновления контракта снимки со старыми URL нужно переснять.
-
-При наличии Node.js и Playwright браузерную проверку можно повторить на
-отдельном тестовом сервере:
-
-```bash
-npm install --prefix /tmp/isoarch-playwright playwright
-node /tmp/isoarch-playwright/node_modules/playwright/cli.js install chromium
-LR3_INTEGRATION=1 LR3_BASE_URL=http://127.0.0.1:58000 \
-LR3_PLAYWRIGHT_MODULE=/tmp/isoarch-playwright/node_modules/playwright \
-node scripts/browser_check.cjs
-```
-
-Для существующего Chromium можно указать `LR3_CHROME_PATH`. Среда должна
-содержать системные библиотеки, необходимые браузеру.
+Postman-коллекция ([postman_collection.json](postman_collection.json)) содержит
+все 10 операций отдельными запросами, включая login и logout; тесты
+дополнительно проверяют следующую запись ленты, признак лайка и недоступность
+удалённой записи.
 
 Остановка: `Ctrl+C`, затем `docker compose down`; данные в volumes сохраняются.

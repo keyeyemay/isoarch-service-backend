@@ -190,10 +190,10 @@ def seed_media():
     from minio.error import S3Error
     from core.minio_client import minio_client
     from core.config import MEDIA_BUCKET
-    for kind, mime, name in [("images", "image/png", "default_signature.png"), ("videos", "video/mp4", "default_signature.mp4")]:
+    for mime, name in [("image/png", "default_signature.png"), ("video/mp4", "default_signature.mp4")]:
         try:
             minio_client.stat_object(MEDIA_BUCKET, name)
         except S3Error as exc:
             if exc.code not in ("NoSuchKey", "NoSuchObject"):
                 raise
-            minio_client.fput_object(MEDIA_BUCKET, name, str(Path("static") / kind / name), content_type=mime)
+            minio_client.fput_object(MEDIA_BUCKET, name, str(Path("media") / name), content_type=mime)
