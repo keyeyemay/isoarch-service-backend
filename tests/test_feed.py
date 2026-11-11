@@ -12,7 +12,7 @@ from db.session import get_db
 from models import IsotopicSignature, User, SignatureLike
 from services.media import mp4_duration
 from fastapi import HTTPException
-from services.auth import hash_password, session_key, active_logins, USERNAMES_KEY
+from services.auth import hash_password, session_key, active_logins, active_sessions
 from fakeredis import FakeRedis
 from redis.exceptions import ConnectionError as RedisConnectionError
 from core.config import SESSION_TTL_SECONDS
@@ -215,7 +215,9 @@ class ApiTests(unittest.TestCase):
 
     def test_login_logout_and_session_replay(self):
         token = self.client.cookies.get('session_id')
-        self.assertEqual(self.redis.get(session_key(token)), '1')
+        self.assertEqual(self.redis.type(session_key(token)), 'hash')
+        self.assertEqual(self.redis.hget(session_key(token), 'user_id'), '1')
+        self.assertEqual(self.redis.hget(session_key(token), 'username'), 'current')
         self.assertNotIn(token, session_key(token))
         self.assertGreater(self.redis.ttl(session_key(token)), 0)
         self.assertLessEqual(self.redis.ttl(session_key(token)), SESSION_TTL_SECONDS)
@@ -228,7 +230,7 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(response.status_code,204)
         self.assertEqual(response.content,b'')
         self.assertIn('Max-Age=0',response.headers['set-cookie'])
-        self.assertIsNone(self.redis.get(session_key(token)))
+        self.assertFalse(self.redis.exists(session_key(token)))
         self.client.cookies.set('session_id',token)
         self.assertEqual(self.client.get('/auth/me').status_code,401)
         self.assertEqual(self.client.post('/auth/logout').status_code,204)
@@ -242,7 +244,7 @@ class ApiTests(unittest.TestCase):
         self.assertIn('Max-Age=',response.headers['set-cookie'])
         token = self.client.cookies.get('session_id')
         self.assertNotEqual(previous,token)
-        self.assertIsNone(self.redis.get(session_key(previous)))
+        self.assertFalse(self.redis.exists(session_key(previous)))
         self.redis.expire(session_key(token), 0)
         self.assertEqual(self.client.get('/services/draft').status_code,401)
         for bad in ('invalid-token', 'x'*129, previous):
@@ -252,18 +254,31 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(self.client.get('/services').status_code,200)
 
     def test_active_logins_lua_script(self):
-        self.assertEqual(self.redis.hget(USERNAMES_KEY, '1'), 'current')
+        token = self.client.cookies.get('session_id')
         second = TestClient(app)
         self.assertEqual(second.post('/auth/login', json={'username':'other','password':'p'}).status_code, 200)
         third = TestClient(app)
         self.assertEqual(third.post('/auth/login', json={'username':'other','password':'p'}).status_code, 200)
+        sessions = active_sessions()
+        # The script returns the sessions themselves: login comes from the session hash.
+        self.assertEqual([s['login'] for s in sessions], ['current', 'other', 'other'])
+        own = sessions[0]
+        self.assertEqual(own['session_key'], session_key(token))
+        self.assertEqual(own['user_id'], 1)
+        self.assertTrue(0 < own['ttl'] <= SESSION_TTL_SECONDS)
+        self.assertTrue(own['created_at'])
+        self.assertEqual({s['session_key'] for s in sessions[1:]},
+                         {session_key(second.cookies.get('session_id')), session_key(third.cookies.get('session_id'))})
         self.assertEqual(active_logins(), [('current', 1), ('other', 2)])
-        # Session created before usernames were stored: the script falls back to the ID.
+        # Keys of another type under the session prefix are ignored and are not valid sessions.
         self.redis.set(session_key('legacy'), '7', ex=60)
-        self.assertIn(('user_id=7', 1), active_logins())
+        self.assertEqual(len(active_sessions()), 3)
+        self.client.cookies.set('session_id', 'legacy')
+        self.assertEqual(self.client.get('/auth/me').status_code, 401)
+        self.client.cookies.set('session_id', token)
         self.assertEqual(self.client.post('/auth/logout').status_code, 204)
         second.post('/auth/logout')
-        self.assertEqual(active_logins(), [('other', 1), ('user_id=7', 1)])
+        self.assertEqual(active_logins(), [('other', 1)])
         second.close(); third.close()
         with patch('services.auth.redis_client.eval', side_effect=RedisConnectionError):
             with self.assertRaises(HTTPException) as error:
@@ -272,7 +287,7 @@ class ApiTests(unittest.TestCase):
 
     def test_redis_failure_does_not_grant_access_or_fake_logout(self):
         token = self.client.cookies.get('session_id')
-        with patch('services.auth.redis_client.get', side_effect=RedisConnectionError):
+        with patch('services.auth.redis_client.hget', side_effect=RedisConnectionError):
             self.assertEqual(self.client.get('/services/draft').status_code, 503)
         with patch('services.auth.redis_client.delete', side_effect=RedisConnectionError):
             self.assertEqual(self.client.post('/auth/logout').status_code, 503)
@@ -363,7 +378,7 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(response.status_code,204)
         self.assertIn('session-id=', '\n'.join(response.headers.get_list('set-cookie')))
         self.assertEqual(self.client.get('/auth/me', headers=headers).status_code,401)
-        self.assertIsNone(self.redis.get(session_key(token)))
+        self.assertFalse(self.redis.exists(session_key(token)))
 
 
 if __name__ == '__main__':unittest.main()

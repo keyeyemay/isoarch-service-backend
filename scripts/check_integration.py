@@ -15,7 +15,7 @@ def main():
         raise SystemExit('Explicit DATABASE_URL, MINIO_ENDPOINT and REDIS_URL are required')
     from db.session import engine
     from models import IsotopicSignature, User, SignatureLike
-    from services.auth import session_key, active_logins
+    from services.auth import session_key, active_logins, active_sessions
     from core.redis_client import redis_client
     from core.config import SESSION_TTL_SECONDS
     base = os.environ.get('LR4_BASE_URL', 'http://127.0.0.1:58000')
@@ -42,10 +42,12 @@ def main():
         login = call('Login sets cookie', 'POST', '/auth/login', json={k: registration[k] for k in ('username','password')})
         assert 'HttpOnly' in login.headers['set-cookie']
         token = client.cookies.get('session_id')
-        assert redis_client.get(session_key(token)) == str(owner['id'])
+        session = redis_client.hgetall(session_key(token))
+        assert session['user_id'] == str(owner['id']) and session['username'] == registration['username']
         assert 0 < redis_client.ttl(session_key(token)) <= SESSION_TTL_SECONDS
         results.append({'check': 'Real Redis session user and TTL', 'result': 'passed'})
         assert (registration['username'], 1) in active_logins()
+        assert session_key(token) in [s['session_key'] for s in active_sessions()]
         results.append({'check': 'Lua script lists active login', 'result': 'passed'})
         assert call('Session identity', 'GET', '/auth/me').json()['id'] == owner['id']
         assert call('Own draft absent', 'GET', '/services/draft').json() is None
@@ -100,7 +102,7 @@ def main():
         assert record.status == 'deleted' and record.completed_at and record.creator_id == owner['id']
         assert db.query(SignatureLike).filter_by(signature_id=id, user_id=owner['id']).count() == 1
         assert db.get(User, owner['id']).password.startswith('scrypt$')
-        assert redis_client.get(session_key(token)) is None
+        assert not redis_client.exists(session_key(token))
         assert registration['username'] not in [login for login, _ in active_logins()]
         results.append({'check': 'PostgreSQL soft delete, preserved like, password hash; Redis session revoked', 'result': 'passed'})
     report = {'checked_at': datetime.now(timezone.utc).isoformat(), 'database': engine.dialect.name,

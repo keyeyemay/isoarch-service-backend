@@ -23,9 +23,10 @@ def main():
         raise SystemExit("Ожидается ключ isoarch:session:<SHA-256>")
     try:
         with redis_client.pipeline(transaction=True) as pipeline:
-            value, ttl = pipeline.get(key).ttl(key).execute()
+            session, ttl = pipeline.hgetall(key).ttl(key).execute()
+        value = session.get("user_id")
         print(f"Redis key: {key}")
-        print(f"Redis GET (user_id): {value}")
+        print(f"Redis HGETALL: {session}")
         print(f"Redis TTL: {ttl} seconds")
         if value is None:
             raise SystemExit("Сессия отсутствует, истекла или была отозвана. Войдите снова через Swagger.")

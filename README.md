@@ -104,24 +104,28 @@ MinIO, а в пустую БД добавляются демонстрацион
 ## Сессии и права
 
 Вход создаёт случайный UUID в cookie `session_id` (`HttpOnly`, `SameSite=Lax`,
-`Path=/`, срок по умолчанию сутки). Redis хранит SHA-256 токена и
-ID пользователя: ключ `isoarch:session:<SHA-256(UUID)>`, значение — ID,
-TTL по умолчанию 86400 секунд. Повторный вход атомарно заменяет
+`Path=/`, срок по умолчанию сутки). Сессия в Redis — хеш
+`isoarch:session:<SHA-256(UUID)>` с полями `user_id`, `username`, `created_at`
+и TTL по умолчанию 86400 секунд. Сам UUID в Redis не хранится. Повторный вход атомарно заменяет
 текущую сессию. Выход удаляет ключ из Redis и cookie, поэтому повторное
 использование старого токена возвращает 401. Сессии сохраняются между
 перезапусками приложения; истёкшие ключи автоматически удаляет Redis.
 Docker Compose включает AOF и volume для сохранения сессий при перезапуске Redis.
-При входе в той же транзакции в хеш `isoarch:usernames` записывается
-`user_id → username`: Lua-скрипт `services/active_logins.lua` выполняется внутри
-Redis и не может обратиться к PostgreSQL. Скрипт перебирает ключи сессий
-через SCAN и возвращает логины пользователей с активными сессиями и число их сессий:
+Логин хранится в самой сессии, поэтому Lua-скрипт `services/active_logins.lua`,
+выполняемый внутри Redis, читает всё из ключей сессий и не обращается к PostgreSQL.
+Скрипт перебирает ключи через SCAN и для каждой активной сессии возвращает
+логин, `user_id`, ключ сессии, время создания и оставшийся TTL:
 
 ```bash
-docker compose exec redis redis-cli EVAL "$(cat services/active_logins.lua)" 1 isoarch:usernames 'isoarch:session:*'
-python -m scripts.active_logins      # тот же скрипт через redis-py EVAL
+docker compose exec redis redis-cli HGETALL isoarch:session:<SHA-256>   # одна сессия
+docker compose exec redis redis-cli EVAL "$(cat services/active_logins.lua)" 0 'isoarch:session:*'
+python -m scripts.active_logins            # тот же скрипт через redis-py EVAL, таблицей
+python -m scripts.active_logins --cookie   # + отметить сессию браузера по cookie session_id
 ```
 
-Сессии, созданные до появления хеша, показываются как `user_id=<ID>`.
+Связь cookie браузера с ключом Redis: `printf %s '<значение session_id>' | sha256sum`
+даёт суффикс ключа `isoarch:session:…`. Ключи старого формата (строки) скрипт
+пропускает, а сервер не считает их действующими сессиями.
 При отказе Redis операции с сессиями отвечают 503; подмена гостем не выполняется.
 Разные браузеры могут иметь независимые сессии одного пользователя.
 Пароли хранятся как scrypt-хеш с индивидуальной солью, проверяются через

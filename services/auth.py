@@ -3,9 +3,10 @@ import hashlib
 import hmac
 import secrets
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import HTTPException
-from redis.exceptions import RedisError
+from redis.exceptions import RedisError, ResponseError
 from core.redis_client import redis_client
 from core.config import SESSION_TTL_SECONDS
 
@@ -35,8 +36,8 @@ def token_digest(token: str) -> str:
 
 
 SESSION_PREFIX = "isoarch:session:"
-# Lua cannot query PostgreSQL, so login stores user_id → username for the active-logins script.
-USERNAMES_KEY = "isoarch:usernames"
+# A session is a Redis HASH {user_id, username, created_at} with a TTL. The login is kept
+# inside the session itself, so the Lua script reads everything from the session keys.
 ACTIVE_LOGINS_LUA = Path(__file__).with_name("active_logins.lua").read_text(encoding="utf-8")
 
 
@@ -56,7 +57,9 @@ def session_user_id(token: str | None) -> int | None:
     if not token or len(token) > 128:
         return None
     try:
-        value = redis_client.get(session_key(token))
+        value = redis_client.hget(session_key(token), "user_id")
+    except ResponseError:
+        return None  # key of another type (e.g. an old string session): not a valid session
     except RedisError as exc:
         raise HTTPException(503, "Session storage is unavailable") from exc
     return int(value) if value is not None else None
@@ -69,18 +72,39 @@ def create_session(user_id: int, username: str, previous_token: str | None = Non
         with redis_client.pipeline(transaction=True) as transaction:
             if previous_token:
                 transaction.delete(session_key(previous_token))
-            transaction.set(session_key(token), str(user_id), ex=SESSION_TTL_SECONDS)
-            transaction.hset(USERNAMES_KEY, str(user_id), username)
+            key = session_key(token)
+            transaction.delete(key)
+            transaction.hset(key, mapping={
+                "user_id": str(user_id),
+                "username": username,
+                "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            })
+            transaction.expire(key, SESSION_TTL_SECONDS)
             transaction.execute()
     except RedisError as exc:
         raise HTTPException(503, "Session storage is unavailable") from exc
     return token
 
 
-def active_logins() -> list[tuple[str, int]]:
-    """Run the Lua script: logins with active sessions and the number of sessions."""
+def active_sessions() -> list[dict]:
+    """Run the Lua script: every active session with its login, key, creation time and TTL."""
     try:
-        reply = redis_client.eval(ACTIVE_LOGINS_LUA, 1, USERNAMES_KEY, SESSION_PREFIX + "*")
+        reply = redis_client.eval(ACTIVE_LOGINS_LUA, 0, SESSION_PREFIX + "*")
     except RedisError as exc:
         raise HTTPException(503, "Session storage is unavailable") from exc
-    return [(login, int(count)) for login, count in reply]
+    sessions = []
+    for entry in reply:
+        fields = [item.decode() if isinstance(item, bytes) else item for item in entry]
+        session = dict(zip(fields[::2], fields[1::2]))
+        session["user_id"] = int(session["user_id"])
+        session["ttl"] = int(session["ttl"])
+        sessions.append(session)
+    return sessions
+
+
+def active_logins() -> list[tuple[str, int]]:
+    """Logins with active sessions and the number of their sessions (from the Lua script)."""
+    counts: dict[str, int] = {}
+    for session in active_sessions():
+        counts[session["login"]] = counts.get(session["login"], 0) + 1
+    return sorted(counts.items())
