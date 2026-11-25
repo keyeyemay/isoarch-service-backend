@@ -77,10 +77,19 @@ def create_session(user_id: int, username: str, previous_token: str | None = Non
     return token
 
 
-def active_logins() -> list[tuple[str, int]]:
-    """Run the Lua script: logins with active sessions and the number of sessions."""
+def active_sessions() -> list[dict]:
+    """Run the Lua script: every active session with its login, user_id, Redis key and TTL."""
     try:
         reply = redis_client.eval(ACTIVE_LOGINS_LUA, 1, USERNAMES_KEY, SESSION_PREFIX + "*")
     except RedisError as exc:
         raise HTTPException(503, "Session storage is unavailable") from exc
-    return [(login, int(count)) for login, count in reply]
+    return [{"login": login, "user_id": int(user_id), "key": key, "ttl": int(ttl)}
+            for login, user_id, key, ttl in reply]
+
+
+def active_logins() -> list[tuple[str, int]]:
+    """Logins with active sessions and the number of sessions, from the same Lua script."""
+    counts: dict[str, int] = {}
+    for session in active_sessions():
+        counts[session["login"]] = counts.get(session["login"], 0) + 1
+    return list(counts.items())

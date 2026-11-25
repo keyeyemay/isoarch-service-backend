@@ -12,7 +12,7 @@ from db.session import get_db
 from models import IsotopicSignature, User, SignatureLike
 from services.media import mp4_duration
 from fastapi import HTTPException
-from services.auth import hash_password, session_key, active_logins, USERNAMES_KEY
+from services.auth import hash_password, session_key, active_logins, active_sessions, USERNAMES_KEY
 from fakeredis import FakeRedis
 from redis.exceptions import ConnectionError as RedisConnectionError
 from core.config import SESSION_TTL_SECONDS
@@ -258,6 +258,10 @@ class ApiTests(unittest.TestCase):
         third = TestClient(app)
         self.assertEqual(third.post('/auth/login', json={'username':'other','password':'p'}).status_code, 200)
         self.assertEqual(active_logins(), [('current', 1), ('other', 2)])
+        sessions = active_sessions()
+        self.assertEqual([(s['login'], s['user_id']) for s in sessions], [('current', 1), ('other', 2), ('other', 2)])
+        self.assertIn(session_key(third.cookies.get('session_id')), [s['key'] for s in sessions])
+        self.assertTrue(all(0 < s['ttl'] <= 86400 for s in sessions))
         # Session created before usernames were stored: the script falls back to the ID.
         self.redis.set(session_key('legacy'), '7', ex=60)
         self.assertIn(('user_id=7', 1), active_logins())

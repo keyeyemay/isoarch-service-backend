@@ -118,7 +118,10 @@ Docker Compose включает AOF и volume для сохранения сес
 При входе в той же транзакции в хеш `isoarch:usernames` записывается
 `user_id → username`: Lua-скрипт `services/active_logins.lua` выполняется внутри
 Redis и не может обратиться к PostgreSQL. Скрипт перебирает ключи сессий
-через SCAN и возвращает логины пользователей с активными сессиями и число их сессий:
+через SCAN и для каждой активной сессии возвращает логин, `user_id`, ключ Redis
+(`isoarch:session:<SHA-256 cookie>`) и оставшийся TTL. Python-обёртка группирует
+их по логину и дополнительно выводит время входа, оставшееся время и
+данные пользователя из PostgreSQL:
 
 ```bash
 docker compose exec redis redis-cli EVAL "$(cat services/active_logins.lua)" 1 isoarch:usernames 'isoarch:session:*'
