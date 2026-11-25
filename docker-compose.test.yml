@@ -27,7 +27,7 @@ services:
       timeout: 3s
       retries: 30
   minio:
-    image: minio/minio:latest
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
     ports:
       - "127.0.0.1:59000:9000"
       - "127.0.0.1:59001:9001"

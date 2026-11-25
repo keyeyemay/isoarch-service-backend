@@ -15,23 +15,19 @@ FastAPI · SQLAlchemy · PostgreSQL 16 · Redis 7 · MinIO · SPA на JavaScrip
 документа. Swagger описывает cookie-авторизацию, входные и выходные схемы,
 параметры и ограничения прав.
 
-[Задание](Lab4_FastAPI.md) · [Общая диаграмма классов](docs/lr4_architecture.md) ·
-[Соответствие требованиям и сдача](docs/lr4_submission.md) ·
-[Postman](postman_collection.json).
+Документы:
 
-Для показа Swagger → ручная cookie → Postman → Redis:
-[пошаговая инструкция и скриншоты 1–9](docs/lr4_demo_steps.md),
-[отдельная коллекция](postman_demo_collection.json).
+- [Общая диаграмма классов](docs/lr4_architecture.md)
+- [Соответствие требованиям и сдача](docs/lr4_submission.md)
+- [Показ Swagger → cookie → Postman → Redis, скриншоты 1–9](docs/lr4_demo_steps.md)
+- [Подготовка к защите ЛР4](docs/lr4_defense_preparation.md)
+- Диаграмма последовательности: [HTTP-сценарий](docs/lr4_sequence_preview.png),
+  [операции доменов](docs/lr4_sequence_domains_preview.png)
+- Postman: [полная коллекция](postman_collection.json), [коллекция для показа](postman_demo_collection.json)
 
-[Подготовка к защите ЛР4](docs/lr4_defense_preparation.md): объяснение проекта,
-контрольные вопросы и примеры ответов для защиты.
-
-[РПЗ в формате DOC](docs/lr4_rpz.doc) · [редактируемая версия DOCX](docs/lr4_rpz.docx) ·
-[текст документа](docs/lr4_rpz.md). Включает ТЗ и таблицу методов; титульный лист
-и три диаграммы вставляются вручную в подготовленные места.
-
-[Диаграмма последовательности в draw.io](lr4_sequence.drawio): полный HTTP-сценарий
-на листе 01, операции доменов на листе 02.
+Этот бэкенд нужен для ЛР7: фронтенд (`isoarch-service-frontend`) проксирует к нему
+`/api` и `/s3`. Диаграмма развёртывания — в репозитории фронтенда,
+`docs/diagrams/deployment_diagram.png`.
 
 ## Запуск
 
@@ -52,6 +48,14 @@ python main.py
   пользователь `isoarch_user`, пароль `isoarch_password`.
 - MinIO: http://localhost:9001 — `root` / `rootpassword`; API: порт 9000.
 - Redis: `localhost:6379`; проверка `docker compose exec redis redis-cli PING`.
+
+Веб-сервис и все контейнеры слушают только `127.0.0.1`: из сети (например, с телефона)
+к ним не подключиться напрямую, только через HTTPS реверс-прокси фронтенда на порту 3000.
+
+MinIO запускается из образа `pgsty/minio` (поддерживаемая сборка MinIO с той же
+командой и консолью): официальный `minio/minio` удалён из Docker Hub и Quay,
+поэтому `docker compose up` с ним падал с `pull access denied`. Данные в volume
+`minio-data` совместимы, пересоздавать его не нужно.
 
 При запуске Alembic обновляет схему без удаления данных ЛР3, настраивается
 MinIO, а в пустую БД добавляются демонстрационные данные и медиа.
